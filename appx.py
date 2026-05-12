@@ -5760,22 +5760,38 @@ elif secim == "🧊 3D ELF Görselleştirme":
     if elf_file is not None:
         if st.button("🚀 3D Grafiği Oluştur", type="primary"):
             try:
-                # --- 2. CUBE DOSYASI OKUMA (Basit Ayrıştırıcı) ---
+                # --- 2. CUBE DOSYASI OKUMA (Dinamik Akıllı Ayrıştırıcı) ---
                 content = elf_file.getvalue().decode("utf-8").splitlines()
                 
-                # Atom sayısı ve orijin
-                header_3 = content[2].split()
-                n_atoms = int(header_3[0])
-                origin = np.array([float(x) for x in header_3[1:4]])
+                # Başlıkları/Yorumları dinamik olarak atla
+                start_idx = 0
+                for i, line in enumerate(content):
+                    parts = line.split()
+                    # Cube formatında Atom Bilgisi satırında her zaman tam 4 değer olur
+                    if len(parts) == 4:
+                        try:
+                            # İlk değerin mutlak bir tam sayı (noktasız int) olması gerekir.
+                            # Eğer 7.5000 gibi bir yorum satırıysa ValueError verip pas geçecek.
+                            n_atoms = int(parts[0])
+                            origin = np.array([float(x) for x in parts[1:4]])
+                            start_idx = i
+                            break
+                        except ValueError:
+                            continue
                 
-                # Grid boyutları ve vektörler
-                nx, dx_x, dx_y, dx_z = [float(v) for v in content[3].split()]
-                ny, dy_x, dy_y, dy_z = [float(v) for v in content[4].split()]
-                nz, dz_x, dz_y, dz_z = [float(v) for v in content[5].split()]
+                # Grid boyutları ve vektörler (Bulunan atom satırının hemen altındaki 3 satır)
+                nx_parts = content[start_idx + 1].split()
+                ny_parts = content[start_idx + 2].split()
+                nz_parts = content[start_idx + 3].split()
+                
+                nx, dx_x, dx_y, dx_z = [float(v) for v in nx_parts]
+                ny, dy_x, dy_y, dy_z = [float(v) for v in ny_parts]
+                nz, dz_x, dz_y, dz_z = [float(v) for v in nz_parts]
+                
                 nx, ny, nz = int(nx), int(ny), int(nz)
                 
-                # Veri kısmını okuma
-                data_start_idx = 6 + abs(n_atoms)
+                # Veri kısmını okuma (Araya giren atom koordinatlarını da atlıyoruz)
+                data_start_idx = start_idx + 4 + abs(n_atoms)
                 raw_data = []
                 for line in content[data_start_idx:]:
                     raw_data.extend([float(val) for val in line.split()])
@@ -5799,11 +5815,10 @@ elif secim == "🧊 3D ELF Görselleştirme":
                     value=elf_data.flatten(),
                     isomin=np.min(elf_data),
                     isomax=np.max(elf_data),
-                    opacity=1.0, # Yüzeylerin tam görünmesi için
-                    surface_count=20, # Renk geçiş yumuşaklığı (kontur sayısı)
-                    colorscale='Jet', # Gönderdiğiniz görsele en yakın renk paleti
+                    opacity=1.0, 
+                    surface_count=20, 
+                    colorscale='Jet', 
                     colorbar=dict(title="ELF", thickness=20, tickfont=dict(size=14, family="Times New Roman")),
-                    # Kutu yüzeylerinde (faces) veriyi göstermek için slice ayarları:
                     slices_z=dict(show=True, locations=[np.min(z_vals), np.max(z_vals)]),
                     slices_y=dict(show=True, locations=[np.min(y_vals), np.max(y_vals)]),
                     slices_x=dict(show=True, locations=[np.min(x_vals), np.max(x_vals)]),
@@ -5823,10 +5838,10 @@ elif secim == "🧊 3D ELF Görselleştirme":
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
-                st.success("✅ Grafik başarıyla oluşturuldu! Grafiği farenizle döndürebilir ve yakınlaştırabilirsiniz.")
+                st.success("✅ Grafik başarıyla oluşturuldu! Farenizle döndürebilirsiniz.")
 
             except Exception as e:
-                st.error(f"Dosya okuma veya çizim sırasında bir hata oluştu: {e}")
+                st.error(f"Veri işlenirken bir hata oluştu: {e}")
        # ==========================================
 # MODÜL: AIMD KARARLILIK (Sıcaklık/Enerji)
 # ==========================================
