@@ -5738,7 +5738,7 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
             file_name=f"Comprehensive_AIMD_{mat_name}.png",
             mime="image/png"
         )
-        # ==========================================
+       # ==========================================
 # MODÜL: AIMD KARARLILIK (Sıcaklık/Enerji)
 # ==========================================
 elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
@@ -5888,7 +5888,28 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
             with cl3:
                 p_dpi = st.selectbox("İndirme Çözünürlüğü (DPI)", [300, 600, 1000, 1200], index=1)
 
+            st.markdown("---")
+            st.markdown("**4. Grafik Boyutu, Panel Etiketleri ve Malzeme İsmi Ayarları**")
+            cb1, cb2, cb3 = st.columns(3)
+            with cb1:
+                st.markdown("**Boyut & Boşluk**")
+                p_fig_width = st.slider("Grafik Genişliği", min_value=5, max_value=40, value=24, step=1)
+                p_fig_height = st.slider("Grafik Yüksekliği", min_value=5, max_value=30, value=12, step=1)
+                p_wspace = st.slider("Grafikler Arası Boşluk", min_value=0.0, max_value=1.0, value=0.15, step=0.05)
+            with cb2:
+                st.markdown("**Panel (a)/(b) Konumu**")
+                p_panel_x = st.slider("(a)/(b) X Konumu", min_value=-0.2, max_value=1.2, value=0.95, step=0.01)
+                p_panel_y = st.slider("(a)/(b) Y Konumu", min_value=-0.2, max_value=1.2, value=0.92, step=0.01)
+            with cb3:
+                st.markdown("**Malzeme İsmi**")
+                p_mat_name = st.text_input("Malzeme İsmi (Örn: MoS_2)", value="")
+                p_mat_x = st.slider("Malzeme X Konumu", min_value=-0.2, max_value=1.2, value=0.05, step=0.01)
+                p_mat_y = st.slider("Malzeme Y Konumu", min_value=-0.2, max_value=1.2, value=0.92, step=0.01)
+
         # 🎨 ÇİZİM BÖLÜMÜ
+
+        # Global Font Ayarı: Times New Roman
+        plt.rcParams['font.family'] = 'Times New Roman'
 
         if mode == "temp":
             selected_metrics = [('Temperature(K)', 'Temperature (K)', (p_t_min, p_t_max), p_t_step)]
@@ -5901,10 +5922,13 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
             ]
 
         num_cols = len(selected_metrics)
-        fig, axs = plt.subplots(1, num_cols, figsize=(14*num_cols, 14), squeeze=False)
+        # Genişlik ve yükseklik kullanıcıya bağlandı
+        fig, axs = plt.subplots(1, num_cols, figsize=(p_fig_width, p_fig_height), squeeze=False)
 
         # Lejant kolon sayısını belirleme (Yatay ise veri sayısı kadar yan yana)
         leg_ncol = len(datasets) if p_leg_orient == "Yatay (Yan Yana)" else 1
+
+        panel_labels = ["(a)", "(b)"]
 
         for col in range(num_cols):
             ax = axs[0, col]
@@ -5928,8 +5952,9 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
             ax.xaxis.set_minor_locator(AutoMinorLocator(2))
             ax.yaxis.set_minor_locator(AutoMinorLocator(2))
 
-            ax.tick_params(axis='both', which='major', direction='in', length=12, width=2.5, labelsize=20, pad=10, top=True, right=False)
-            ax.tick_params(axis='both', which='minor', direction='in', length=6, width=1.5, top=True, right=False)
+            # Üst eksen tick'leri (top=False) yapıldı (Hem major hem minor için)
+            ax.tick_params(axis='both', which='major', direction='in', length=12, width=2.5, labelsize=20, pad=10, top=False, right=False)
+            ax.tick_params(axis='both', which='minor', direction='in', length=6, width=1.5, top=False, right=False)
 
             for label in ax.get_xticklabels() + ax.get_yticklabels():
                 label.set_fontweight('bold')
@@ -5937,11 +5962,24 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
             for spine in ax.spines.values():
                 spine.set_linewidth(2.5)
 
-            # Sadece tek panelde (ilk grafikte) lejant göster - YATAY/DİKEY UYARLAMASI EKLENDİ
+            # Panel Etiketini Ekleme (a, b)
+            if mode == "both" or num_cols > 1:
+                ax.text(p_panel_x, p_panel_y, panel_labels[col], transform=ax.transAxes, 
+                        fontsize=26, fontweight='bold', va='center', ha='center')
+
+            # Malzeme İsmi Ekleme (Kullanıcı girdiyse)
+            if p_mat_name.strip() != "":
+                # LaTeX formatı için süslü parantez içine alıp $ sembolleri ile sarmalıyoruz
+                ax.text(p_mat_x, p_mat_y, fr"${p_mat_name}$", transform=ax.transAxes, 
+                        fontsize=26, fontweight='bold', va='center', ha='left')
+
+            # Sadece tek panelde (ilk grafikte) lejant göster
             if col == 0:
                 ax.legend(loc=p_leg_loc, ncol=leg_ncol, fontsize=20, frameon=True, edgecolor='black', framealpha=0.9).get_frame().set_linewidth(1.5)
 
         plt.tight_layout(pad=3.0)
+        # Grafikler arası mesafe kullanıcı ayarına bağlandı
+        fig.subplots_adjust(wspace=p_wspace)
 
         # Ekrana Basma
         st.pyplot(fig)
