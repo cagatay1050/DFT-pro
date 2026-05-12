@@ -48,6 +48,7 @@ from ase.geometry import find_mic
 
 from pymatgen.core.periodic_table import Element
 from pymatgen.core.composition import Composition
+import plotly.graph_objects as go
 
 # ==========================================
 # AKADEMİK GRAFİK FONT AYARLARI (GLOBAL)
@@ -5739,6 +5740,93 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
             file_name=f"Comprehensive_AIMD_{mat_name}.png",
             mime="image/png"
         )
+# ==========================================
+# MODÜL: 3D ELF GÖRSELLEŞTİRME (PLOTLY)
+# ==========================================
+elif secim == "🧊 3D ELF Görselleştirme":
+    st.header("3D ELF (Electron Localization Function) Analizi")
+    st.markdown("CASTEP vb. programlardan elde ettiğiniz hacimsel **.cube** formatındaki ELF veri dosyasını yükleyin. Hücre yüzeylerindeki elektron yoğunluğunu 3 boyutlu ve etkileşimli olarak inceleyin.")
+    st.markdown("---")
+
+    # --- 1. KULLANICI ARAYÜZÜ ---
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        elf_file = st.file_uploader("ELF Veri Dosyasını Yükleyin (.cube formatı)", type=["cube"])
+    with c2:
+        st.info("💡 CASTEP .elf_fmt dosyalarınızı işleyebilmek için öncesinde .cube formatına dönüştürmeniz tavsiye edilir.")
+
+    st.markdown("---")
+
+    if elf_file is not None:
+        if st.button("🚀 3D Grafiği Oluştur", type="primary"):
+            try:
+                # --- 2. CUBE DOSYASI OKUMA (Basit Ayrıştırıcı) ---
+                content = elf_file.getvalue().decode("utf-8").splitlines()
+                
+                # Atom sayısı ve orijin
+                header_3 = content[2].split()
+                n_atoms = int(header_3[0])
+                origin = np.array([float(x) for x in header_3[1:4]])
+                
+                # Grid boyutları ve vektörler
+                nx, dx_x, dx_y, dx_z = [float(v) for v in content[3].split()]
+                ny, dy_x, dy_y, dy_z = [float(v) for v in content[4].split()]
+                nz, dz_x, dz_y, dz_z = [float(v) for v in content[5].split()]
+                nx, ny, nz = int(nx), int(ny), int(nz)
+                
+                # Veri kısmını okuma
+                data_start_idx = 6 + abs(n_atoms)
+                raw_data = []
+                for line in content[data_start_idx:]:
+                    raw_data.extend([float(val) for val in line.split()])
+                
+                # 1D diziyi 3D matrise dönüştürme
+                elf_data = np.array(raw_data).reshape((nx, ny, nz))
+                
+                # X, Y, Z gridlerini oluşturma
+                x_vals = np.linspace(0, nx * dx_x, nx)
+                y_vals = np.linspace(0, ny * dy_y, ny)
+                z_vals = np.linspace(0, nz * dz_z, nz)
+                X, Y, Z = np.meshgrid(x_vals, y_vals, z_vals, indexing='ij')
+
+                # --- 3. PLOTLY İLE 3D HACİM (VOLUME) ÇİZİMİ ---
+                st.markdown("### 🎨 3D Etkileşimli Grafiğiniz")
+                
+                fig = go.Figure(data=go.Volume(
+                    x=X.flatten(),
+                    y=Y.flatten(),
+                    z=Z.flatten(),
+                    value=elf_data.flatten(),
+                    isomin=np.min(elf_data),
+                    isomax=np.max(elf_data),
+                    opacity=1.0, # Yüzeylerin tam görünmesi için
+                    surface_count=20, # Renk geçiş yumuşaklığı (kontur sayısı)
+                    colorscale='Jet', # Gönderdiğiniz görsele en yakın renk paleti
+                    colorbar=dict(title="ELF", thickness=20, tickfont=dict(size=14, family="Times New Roman")),
+                    # Kutu yüzeylerinde (faces) veriyi göstermek için slice ayarları:
+                    slices_z=dict(show=True, locations=[np.min(z_vals), np.max(z_vals)]),
+                    slices_y=dict(show=True, locations=[np.min(y_vals), np.max(y_vals)]),
+                    slices_x=dict(show=True, locations=[np.min(x_vals), np.max(x_vals)]),
+                    caps=dict(x_show=False, y_show=False, z_show=False)
+                ))
+
+                fig.update_layout(
+                    scene=dict(
+                        xaxis=dict(showbackground=False, title="", showticklabels=False),
+                        yaxis=dict(showbackground=False, title="", showticklabels=False),
+                        zaxis=dict(showbackground=False, title="", showticklabels=False),
+                    ),
+                    margin=dict(l=0, r=0, b=0, t=0),
+                    width=800,
+                    height=600,
+                    font=dict(family="Times New Roman")
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+                st.success("✅ Grafik başarıyla oluşturuldu! Grafiği farenizle döndürebilir ve yakınlaştırabilirsiniz.")
+
+            except Exception as e:
+                st.error(f"Dosya okuma veya çizim sırasında bir hata oluştu: {e}")
        # ==========================================
 # MODÜL: AIMD KARARLILIK (Sıcaklık/Enerji)
 # ==========================================
@@ -8168,95 +8256,3 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
                     st.download_button("SVG İndir (Vektörel)", buf_svg.getvalue(), "Band_Structure.svg", "image/svg+xml", use_container_width=True)
         else:
             st.info("Lütfen '1. Veri ve Fermi Seviyesi' sekmesinden bant verinizi yükleyin.")
-import streamlit as st
-import numpy as np
-import plotly.graph_objects as go
-import io
-
-# ==========================================
-# MODÜL: 3D ELF GÖRSELLEŞTİRME (PLOTLY)
-# ==========================================
-elif secim == "🧊 3D ELF Görselleştirme":
-    st.header("3D ELF (Electron Localization Function) Analizi")
-    st.markdown("CASTEP vb. programlardan elde ettiğiniz hacimsel **.cube** formatındaki ELF veri dosyasını yükleyin. Hücre yüzeylerindeki elektron yoğunluğunu 3 boyutlu ve etkileşimli olarak inceleyin.")
-    st.markdown("---")
-
-    # --- 1. KULLANICI ARAYÜZÜ ---
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        elf_file = st.file_uploader("ELF Veri Dosyasını Yükleyin (.cube formatı)", type=["cube"])
-    with c2:
-        st.info("💡 CASTEP .elf_fmt dosyalarınızı işleyebilmek için öncesinde .cube formatına dönüştürmeniz tavsiye edilir.")
-
-    st.markdown("---")
-
-    if elf_file is not None:
-        if st.button("🚀 3D Grafiği Oluştur", type="primary"):
-            try:
-                # --- 2. CUBE DOSYASI OKUMA (Basit Ayrıştırıcı) ---
-                content = elf_file.getvalue().decode("utf-8").splitlines()
-                
-                # Atom sayısı ve orijin
-                header_3 = content[2].split()
-                n_atoms = int(header_3[0])
-                origin = np.array([float(x) for x in header_3[1:4]])
-                
-                # Grid boyutları ve vektörler
-                nx, dx_x, dx_y, dx_z = [float(v) for v in content[3].split()]
-                ny, dy_x, dy_y, dy_z = [float(v) for v in content[4].split()]
-                nz, dz_x, dz_y, dz_z = [float(v) for v in content[5].split()]
-                nx, ny, nz = int(nx), int(ny), int(nz)
-                
-                # Veri kısmını okuma
-                data_start_idx = 6 + abs(n_atoms)
-                raw_data = []
-                for line in content[data_start_idx:]:
-                    raw_data.extend([float(val) for val in line.split()])
-                
-                # 1D diziyi 3D matrise dönüştürme
-                elf_data = np.array(raw_data).reshape((nx, ny, nz))
-                
-                # X, Y, Z gridlerini oluşturma
-                x_vals = np.linspace(0, nx * dx_x, nx)
-                y_vals = np.linspace(0, ny * dy_y, ny)
-                z_vals = np.linspace(0, nz * dz_z, nz)
-                X, Y, Z = np.meshgrid(x_vals, y_vals, z_vals, indexing='ij')
-
-                # --- 3. PLOTLY İLE 3D HACİM (VOLUME) ÇİZİMİ ---
-                st.markdown("### 🎨 3D Etkileşimli Grafiğiniz")
-                
-                fig = go.Figure(data=go.Volume(
-                    x=X.flatten(),
-                    y=Y.flatten(),
-                    z=Z.flatten(),
-                    value=elf_data.flatten(),
-                    isomin=np.min(elf_data),
-                    isomax=np.max(elf_data),
-                    opacity=1.0, # Yüzeylerin tam görünmesi için
-                    surface_count=20, # Renk geçiş yumuşaklığı (kontur sayısı)
-                    colorscale='Jet', # Gönderdiğiniz görsele en yakın renk paleti
-                    colorbar=dict(title="ELF", thickness=20, tickfont=dict(size=14, family="Times New Roman")),
-                    # Kutu yüzeylerinde (faces) veriyi göstermek için slice ayarları:
-                    slices_z=dict(show=True, locations=[np.min(z_vals), np.max(z_vals)]),
-                    slices_y=dict(show=True, locations=[np.min(y_vals), np.max(y_vals)]),
-                    slices_x=dict(show=True, locations=[np.min(x_vals), np.max(x_vals)]),
-                    caps=dict(x_show=False, y_show=False, z_show=False)
-                ))
-
-                fig.update_layout(
-                    scene=dict(
-                        xaxis=dict(showbackground=False, title="", showticklabels=False),
-                        yaxis=dict(showbackground=False, title="", showticklabels=False),
-                        zaxis=dict(showbackground=False, title="", showticklabels=False),
-                    ),
-                    margin=dict(l=0, r=0, b=0, t=0),
-                    width=800,
-                    height=600,
-                    font=dict(family="Times New Roman")
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
-                st.success("✅ Grafik başarıyla oluşturuldu! Grafiği farenizle döndürebilir ve yakınlaştırabilirsiniz.")
-
-            except Exception as e:
-                st.error(f"Dosya okuma veya çizim sırasında bir hata oluştu: {e}")
