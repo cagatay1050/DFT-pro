@@ -7649,17 +7649,6 @@ elif secim == "📈 Murnaghan EOS Fit (CASTEP)":
                 st.error(f"Fit işlemi sırasında bir matematiksel hata oluştu: {e}")
                 st.warning("İpucu: Hacim aralığınız çok dar veya verileriniz parabolik bir kavis (minimum nokta) oluşturmuyor olabilir.")
 
-st.set_page_config(page_title="Kristal Yapı ve Malzeme Keşif Aracı", layout="wide")
-
-import streamlit as st
-import pandas as pd
-import numpy as np
-import itertools
-import math
-import io
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, AutoMinorLocator
-
 # ==========================================
 # 1. ORTAK VERİ TABANI (GLOBAL ALAN)
 # Tüm modüllerin erişebilmesi için en dışta tanımlanmıştır.
