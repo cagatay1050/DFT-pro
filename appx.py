@@ -2252,7 +2252,7 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
                         p_file = st.file_uploader(f"Dosya {i+1}", type=["dat", "txt"], key=f"pfile_{i}")
                         p_label = st.text_input(f"Etiket", value=def_lbl, key=f"plbl_{i}")
                         cc1, cc2 = st.columns(2)
-                        with cc1: p_color = st.color_picker(f"Renk", value=def_col, key=f"pcol_{i}")
+                        with cc1: p_color = st.color_picker(f"Çizgi Rengi", value=def_col, key=f"pcol_{i}")
                         with cc2: p_ls = st.selectbox(f"Çizgi", ["-", "--", ":", "-."], index=["-", "--", ":", "-."].index(def_ls), key=f"pls_{i}")
                         
                         temp_pdos_data.append({
@@ -2270,7 +2270,6 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
             st.error("HATA: Grafiği çizmek için mutlaka Total DOS (TDOS.dat) dosyasını yüklemelisiniz!")
         else:
             try:
-                
                 # TDOS Okuma
                 tdos_file.seek(0)
                 tdos_arr = np.loadtxt(tdos_file)
@@ -2283,11 +2282,10 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
                         p_arr = np.loadtxt(p["file"])
                         valid_pdos.append({"arr": p_arr, "label": p["label"], "color": p["color"], "ls": p["ls"]})
                 
-                # Otonom Y-Ekseni Sınırı Bulma (-4 ile 8 eV arasındaki en yüksek/düşük DOS değeri)
+                # Otonom Y-Ekseni Sınırı Bulma
                 mask = (tdos_arr[:, 0] >= -4.0) & (tdos_arr[:, 0] <= 8.0)
                 if len(tdos_arr[mask]) > 0:
                     if is_spin and tdos_arr.shape[1] >= 3:
-                        # Spin-down değerleri Vaspkit'te negatif verilir, bu yüzden mutlak değere (abs) bakarız
                         max_val = np.max(np.abs(tdos_arr[mask, 1:3]))
                     else:
                         max_val = np.max(tdos_arr[mask, 1])
@@ -2316,8 +2314,13 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         def_ymax = st.session_state.dos_ymax
         is_spin_plot = st.session_state.dos_is_spin
 
+        # Global Font Ayarı (Times New Roman)
+        plt.rcParams['font.family'] = 'serif'
+        plt.rcParams['font.serif'] = ['Times New Roman']
+        plt.rcParams['mathtext.fontset'] = 'stix' # Times uyumlu matematiksel semboller
+
         # 📐 EKSEN VE İNCE AYAR PANELİ
-        with st.expander("📐 Eksen, Lejant ve Estetik Ayarları (Anlık Tepki)", expanded=True):
+        with st.expander("📐 Eksen, Lejant ve Boyut Ayarları (Anlık Tepki)", expanded=True):
             st.markdown("**1. X Ekseni (Enerji, eV)**")
             cx1, cx2, cx3 = st.columns(3)
             with cx1: p_x_min = st.number_input("X Min", value=-4.0, step=1.0)
@@ -2326,52 +2329,81 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
 
             st.markdown("**2. Y Ekseni (States/eV)**")
             cy1, cy2, cy3 = st.columns(3)
-            
-            # Eğer spin polarize ise Y ekseni minimumu varsayılan olarak -Y_Maks olacak
             default_ymin = -def_ymax if is_spin_plot else 0.0
-            
             with cy1: p_y_min = st.number_input("Y Min", value=float(default_ymin), step=5.0)
             with cy2: p_y_max = st.number_input("Y Maks", value=def_ymax, step=5.0)
             with cy3: p_y_step = st.number_input("Y Adımı (Tick)", value=float(np.ceil(def_ymax/4)), step=5.0)
 
-            st.markdown("**3. Estetik ve Konumlandırma**")
-            cm1, cm2 = st.columns(2)
+            st.markdown("**3. Grafik Boyutları (Genişlik x Yükseklik)**")
+            cw, ch = st.columns(2)
+            with cw: fig_w = st.slider("Grafik Genişliği (inch)", 5.0, 20.0, 10.0, 0.5)
+            with ch: fig_h = st.slider("Grafik Yüksekliği (inch)", 5.0, 15.0, 7.5, 0.5)
+
+            st.markdown("**4. Estetik, Lejant ve Fermi Konumu**")
+            cm1, cm2, cm3, cm4 = st.columns(4)
             with cm1: p_leg_loc = st.selectbox("Lejant Konumu", ["best", "upper right", "upper left", "center right", "center left"], index=1)
-            with cm2: p_fermi_color = st.color_picker("Fermi Çizgisi Rengi", value="#000000")
+            with cm2: p_fermi_color = st.color_picker("Fermi Çizgisi", value="#000000")
+            with cm3: p_ef_x = st.slider("Fermi Etiketi (X Konumu)", 0.0, 1.0, 0.51, 0.01)
+            with cm4: p_ef_y = st.slider("Fermi Etiketi (Y Konumu)", 0.0, 1.0, 0.90 if not is_spin_plot else 0.55, 0.01)
+
+        # 🎨 DOLGU VE DESEN AYARLARI PANELİ (YENİ)
+        hatch_options = {"Yok": None, "Eğik Çizgi (/)": "/", "Ters Eğik (\\)": "\\", "Dik Çizgi (|)": "|", "Yatay Çizgi (-)": "-", "Artı (+)": "+", "Çarpı (x)": "x", "Nokta (.)": ".", "Yıldız (*)": "*"}
+        
+        with st.expander("🎨 Dolgu, Desen ve Şeffaflık Ayarları", expanded=False):
+            st.markdown("**Total DOS (TDOS) Dolgu Ayarı**")
+            c_t1, c_t2, c_t3 = st.columns(3)
+            with c_t1: tdos_f_color = st.color_picker("TDOS Dolgu Rengi", value="#808080")
+            with c_t2: tdos_alpha = st.slider("TDOS Şeffaflık", 0.0, 1.0, 0.1)
+            with c_t3: tdos_hatch_sel = st.selectbox("TDOS Deseni", list(hatch_options.keys()), index=0, key="tdos_h")
+            tdos_hatch = hatch_options[tdos_hatch_sel]
+
+            pdos_styles = []
+            if len(pdos_list) > 0:
+                st.markdown("**Partial DOS (PDOS) Dolgu Ayarları**")
+                for i, p in enumerate(pdos_list):
+                    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+                    with col1: st.markdown(f"<br>**{p['label']}**", unsafe_allow_html=True)
+                    with col2: p_f_color = st.color_picker("Renk", value=p["color"], key=f"pf_col_{i}")
+                    with col3: p_alpha = st.slider("Şeffaflık", 0.0, 1.0, 0.15, key=f"pf_alp_{i}")
+                    with col4: 
+                        p_hatch_sel = st.selectbox("Desen", list(hatch_options.keys()), index=0, key=f"pf_hat_{i}")
+                        p_hatch = hatch_options[p_hatch_sel]
+                    
+                    pdos_styles.append({"f_color": p_f_color, "alpha": p_alpha, "hatch": p_hatch})
 
         # 🎨 ÇİZİM BÖLÜMÜ
-        fig, ax = plt.subplots(figsize=(10, 7.5))
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h))
 
         # --- TDOS ÇİZİMİ ---
         ax.plot(tdos_arr[:,0], tdos_arr[:,1], color='dimgray', lw=3, alpha=0.4, label=r'$\mathbf{Total\ DOS}$')
-        ax.fill_between(tdos_arr[:,0], 0, tdos_arr[:,1], color='gray', alpha=0.1, zorder=1)
+        ax.fill_between(tdos_arr[:,0], 0, tdos_arr[:,1], color=tdos_f_color, alpha=tdos_alpha, hatch=tdos_hatch, zorder=1)
         
         # Eğer Spin-Polarize ise 3. sütunu (Spin-DOWN) çiz
         if is_spin_plot and tdos_arr.shape[1] >= 3:
             ax.plot(tdos_arr[:,0], tdos_arr[:,2], color='dimgray', lw=3, alpha=0.4)
-            ax.fill_between(tdos_arr[:,0], 0, tdos_arr[:,2], color='gray', alpha=0.1, zorder=1)
+            ax.fill_between(tdos_arr[:,0], 0, tdos_arr[:,2], color=tdos_f_color, alpha=tdos_alpha, hatch=tdos_hatch, zorder=1)
 
         # --- PDOS ÇİZİMİ ---
-        for p in pdos_list:
+        for i, p in enumerate(pdos_list):
+            style = pdos_styles[i]
             ax.plot(p["arr"][:,0], p["arr"][:,1], label=p["label"], color=p["color"], lw=3, ls=p["ls"], zorder=3)
-            ax.fill_between(p["arr"][:,0], 0, p["arr"][:,1], color=p["color"], alpha=0.15, zorder=2)
+            ax.fill_between(p["arr"][:,0], 0, p["arr"][:,1], color=style["f_color"], alpha=style["alpha"], hatch=style["hatch"], zorder=2)
             
             if is_spin_plot and p["arr"].shape[1] >= 3:
                 ax.plot(p["arr"][:,0], p["arr"][:,2], color=p["color"], lw=3, ls=p["ls"], zorder=3)
-                ax.fill_between(p["arr"][:,0], 0, p["arr"][:,2], color=p["color"], alpha=0.15, zorder=2)
+                ax.fill_between(p["arr"][:,0], 0, p["arr"][:,2], color=style["f_color"], alpha=style["alpha"], hatch=style["hatch"], zorder=2)
 
-        # --- Y=0 ÇİZGİSİ (Sadece Spin grafiğinde alt ve üstü ayırmak için) ---
+        # --- Y=0 ÇİZGİSİ VE SPIN ETİKETLERİ ---
         if is_spin_plot:
             ax.axhline(0, color='black', lw=1.0, ls='-', zorder=4)
-            # Opsiyonel: Yukarı ve Aşağı okları eklemek
-            ax.text(p_x_min + 0.5, p_y_max * 0.85, r'$\uparrow$', fontsize=28, color='black', fontweight='bold')
-            ax.text(p_x_min + 0.5, p_y_min * 0.85, r'$\downarrow$', fontsize=28, color='black', fontweight='bold')
+            # Spin Up / Down okları ve renkli etiketleri (Times New Roman destekli)
+            ax.text(p_x_min + 0.5, p_y_max * 0.82, r'$\uparrow$ Spin Up', fontsize=20, color='red', fontweight='bold')
+            ax.text(p_x_min + 0.5, p_y_min * 0.85, r'$\downarrow$ Spin Down', fontsize=20, color='blue', fontweight='bold')
 
         # --- FERMİ SEVİYESİ VE ETİKETİ ---
         ax.axvline(x=0, color=p_fermi_color, linestyle=':', lw=3, zorder=5)
-        # E_F metninin Y konumu spin aktifse merkeze yakın, değilse tepede olsun
-        ef_y_pos = 0.90 if not is_spin_plot else 0.55
-        ax.text(0.51, ef_y_pos, r'$\mathbf{E_F}$', transform=ax.transAxes, fontsize=16, fontweight='bold', color=p_fermi_color)
+        # Ef konumu artık dinamik menüden alınıyor
+        ax.text(p_ef_x, p_ef_y, r'$\mathbf{E_F}$', transform=ax.transAxes, fontsize=18, fontweight='bold', color=p_fermi_color)
 
         # --- EKSEN VE TICK AYARLARI ---
         ax.set_xlim(p_x_min, p_x_max)
@@ -2388,7 +2420,9 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         ax.tick_params(axis='both', which='major', labelsize=16, length=10, width=2.5, direction='in', pad=10, top=True, right=True)
         ax.tick_params(axis='both', which='minor', length=6, width=1.5, direction='in', top=True, right=True)
         
+        # Tik değerlerinin yazı tipini garantiye almak için döngü (Times New Roman)
         for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontname('Times New Roman')
             label.set_fontweight('bold')
 
         # Çerçeve
