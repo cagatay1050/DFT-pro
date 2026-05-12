@@ -7721,24 +7721,6 @@ def get_elements_data():
 
 
 # ==========================================
-# 2. YAN MENÜ (SİDEBAR) VE ANA KONTROL
-# ==========================================
-st.sidebar.title("Menü")
-
-# 🔴 YENİ MODÜLÜ BURADAKİ LİSTEYE EKLEDİK 🔴
-secim = st.sidebar.radio("Modül Seçin:", ["Ana Sayfa", "🔍 Kristal Yapı Bulucu", "🥞 2D RP Hidrit Bulucu", "📊 Yoğunluk Durumları (DOS/PDOS)"])
-
-# Tüm elementlerin listesi
-tam_element_listesi = list(get_elements_data().keys())
-
-if secim == "Ana Sayfa":
-    st.title("🔬 Malzeme Bilimi Keşif Aracına Hoş Geldiniz")
-    st.markdown("""
-    Bu uygulama, yeni nesil batarya, hidrojen depolama, fotovoltaik ve spintronik uygulamaları için potansiyel kristal yapıları keşfetmenizi sağlar.
-    Lütfen sol menüden kullanmak istediğiniz modülü seçin.
-    """)
-
-# ==========================================
 # 3. MODÜL: KRİSTAL YAPI BULUCU (PEROVSKİT & SPİNEL)
 # ==========================================
 elif secim == "🔍 Kristal Yapı Bulucu":
@@ -8027,7 +8009,8 @@ _atom_site_occupancy
                 bp_cif = atom_parcalari[3].split(" ")[0]
                 
                 st.download_button("💾 Yaklaşık CIF İndir", generate_cif_rp_hydride(ap_cif, a_cif, b_cif, bp_cif, n_katman), f"{sec_rp.replace(' ', '')}.cif", 'text/plain', key="dl_rpcif")
-    # ==========================================
+
+#¹ ==============================================
 # MODÜL: SPİN-POLARİZE BANT YAPISI (BAND STRUCTURE)
 # ==========================================
 elif secim == "⚡ Spin-Polarize Bant Yapısı":
