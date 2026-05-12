@@ -2320,7 +2320,7 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         plt.rcParams['mathtext.fontset'] = 'stix' # Times uyumlu matematiksel semboller
 
         # 📐 EKSEN VE İNCE AYAR PANELİ
-        with st.expander("📐 Eksen, Lejant ve Boyut Ayarları (Anlık Tepki)", expanded=True):
+        with st.expander("📐 Eksen, Boyut ve Yazı Tipi (Font) Ayarları (Anlık Tepki)", expanded=True):
             st.markdown("**1. X Ekseni (Enerji, eV)**")
             cx1, cx2, cx3 = st.columns(3)
             with cx1: p_x_min = st.number_input("X Min", value=-4.0, step=1.0)
@@ -2339,14 +2339,28 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
             with cw: fig_w = st.slider("Grafik Genişliği (inch)", 5.0, 20.0, 10.0, 0.5)
             with ch: fig_h = st.slider("Grafik Yüksekliği (inch)", 5.0, 15.0, 7.5, 0.5)
 
-            st.markdown("**4. Estetik, Lejant ve Fermi Konumu**")
+            st.markdown("**4. Yazı Tipi Büyüklükleri (Font Size)**")
+            cf1, cf2, cf3, cf4 = st.columns(4)
+            with cf1: p_font_title = st.number_input("Eksen Başlıkları", value=18, min_value=8, step=1)
+            with cf2: p_font_tick = st.number_input("Eksen Değerleri", value=16, min_value=8, step=1)
+            with cf3: p_font_leg = st.number_input("Çizgi Etiketleri (Lejant)", value=16, min_value=8, step=1)
+            with cf4: p_font_ef = st.number_input("Fermi (EF) Etiketi", value=18, min_value=8, step=1)
+
+            st.markdown("**5. Estetik, Lejant ve Fermi Konumu**")
             cm1, cm2, cm3, cm4 = st.columns(4)
             with cm1: p_leg_loc = st.selectbox("Lejant Konumu", ["best", "upper right", "upper left", "center right", "center left"], index=1)
-            with cm2: p_fermi_color = st.color_picker("Fermi Çizgisi", value="#000000")
+            with cm2: p_fermi_color = st.color_picker("Fermi Çizgisi Rengi", value="#000000")
             with cm3: p_ef_x = st.slider("Fermi Etiketi (X Konumu)", 0.0, 1.0, 0.51, 0.01)
             with cm4: p_ef_y = st.slider("Fermi Etiketi (Y Konumu)", 0.0, 1.0, 0.90 if not is_spin_plot else 0.55, 0.01)
 
-        # 🎨 DOLGU VE DESEN AYARLARI PANELİ (YENİ)
+            if is_spin_plot:
+                st.markdown("**6. Spin Up / Down Etiket Ayarları**")
+                cs1, cs2, cs3 = st.columns(3)
+                with cs1: spin_font_size = st.number_input("Spin Yazı Boyutu", value=20, min_value=8, step=1)
+                with cs2: spin_up_col = st.color_picker("Spin Up Rengi", value="#FF0000")
+                with cs3: spin_dn_col = st.color_picker("Spin Down Rengi", value="#0000FF")
+
+        # 🎨 DOLGU VE DESEN AYARLARI PANELİ
         hatch_options = {"Yok": None, "Eğik Çizgi (/)": "/", "Ters Eğik (\\)": "\\", "Dik Çizgi (|)": "|", "Yatay Çizgi (-)": "-", "Artı (+)": "+", "Çarpı (x)": "x", "Nokta (.)": ".", "Yıldız (*)": "*"}
         
         with st.expander("🎨 Dolgu, Desen ve Şeffaflık Ayarları", expanded=False):
@@ -2396,14 +2410,13 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         # --- Y=0 ÇİZGİSİ VE SPIN ETİKETLERİ ---
         if is_spin_plot:
             ax.axhline(0, color='black', lw=1.0, ls='-', zorder=4)
-            # Spin Up / Down okları ve renkli etiketleri (Times New Roman destekli)
-            ax.text(p_x_min + 0.5, p_y_max * 0.82, r'$\uparrow$ Spin Up', fontsize=20, color='red', fontweight='bold')
-            ax.text(p_x_min + 0.5, p_y_min * 0.85, r'$\downarrow$ Spin Down', fontsize=20, color='blue', fontweight='bold')
+            # Spin Up / Down okları ve menüden gelen renk/boyut ayarları
+            ax.text(p_x_min + 0.5, p_y_max * 0.82, r'$\uparrow$ Spin Up', fontsize=spin_font_size, color=spin_up_col, fontweight='bold')
+            ax.text(p_x_min + 0.5, p_y_min * 0.85, r'$\downarrow$ Spin Down', fontsize=spin_font_size, color=spin_dn_col, fontweight='bold')
 
         # --- FERMİ SEVİYESİ VE ETİKETİ ---
         ax.axvline(x=0, color=p_fermi_color, linestyle=':', lw=3, zorder=5)
-        # Ef konumu artık dinamik menüden alınıyor
-        ax.text(p_ef_x, p_ef_y, r'$\mathbf{E_F}$', transform=ax.transAxes, fontsize=18, fontweight='bold', color=p_fermi_color)
+        ax.text(p_ef_x, p_ef_y, r'$\mathbf{E_F}$', transform=ax.transAxes, fontsize=p_font_ef, fontweight='bold', color=p_fermi_color)
 
         # --- EKSEN VE TICK AYARLARI ---
         ax.set_xlim(p_x_min, p_x_max)
@@ -2414,13 +2427,14 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         ax.xaxis.set_minor_locator(AutoMinorLocator(2))
         ax.yaxis.set_minor_locator(AutoMinorLocator(2))
         
-        ax.set_xlabel(r'$\mathbf{Energy\ -\ E_F\ (eV)}$', fontsize=18, labelpad=15)
-        ax.set_ylabel(r'$\mathbf{Density\ of\ States\ (States\ /\ eV)}$', fontsize=18, labelpad=15)
+        # Eksen başlıkları için menüden gelen font büyüklüğü (p_font_title)
+        ax.set_xlabel(r'$\mathbf{Energy\ -\ E_F\ (eV)}$', fontsize=p_font_title, labelpad=15)
+        ax.set_ylabel(r'$\mathbf{Density\ of\ States\ (States\ /\ eV)}$', fontsize=p_font_title, labelpad=15)
 
-        ax.tick_params(axis='both', which='major', labelsize=16, length=10, width=2.5, direction='in', pad=10, top=True, right=True)
+        # Eksen değerleri (tick labels) için menüden gelen font büyüklüğü (p_font_tick)
+        ax.tick_params(axis='both', which='major', labelsize=p_font_tick, length=10, width=2.5, direction='in', pad=10, top=True, right=True)
         ax.tick_params(axis='both', which='minor', length=6, width=1.5, direction='in', top=True, right=True)
         
-        # Tik değerlerinin yazı tipini garantiye almak için döngü (Times New Roman)
         for label in ax.get_xticklabels() + ax.get_yticklabels():
             label.set_fontname('Times New Roman')
             label.set_fontweight('bold')
@@ -2429,8 +2443,8 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         for spine in ax.spines.values():
             spine.set_linewidth(2.5)
 
-        # Lejant
-        ax.legend(frameon=False, loc=p_leg_loc, fontsize=16, handletextpad=0.5, borderaxespad=1)
+        # Lejant (Çizgi etiketleri) için menüden gelen font büyüklüğü (p_font_leg)
+        ax.legend(frameon=False, loc=p_leg_loc, fontsize=p_font_leg, handletextpad=0.5, borderaxespad=1)
 
         plt.tight_layout()
 
