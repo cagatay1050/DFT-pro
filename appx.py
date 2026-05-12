@@ -189,8 +189,7 @@ menuler = {
         "📊 Yoğunluk Durumları (DOS/PDOS)",
         "⛰️ NEB Enerji Bariyeri (Energy Profile)",
         "📍 Çoklu Sıcaklık VDoS (Overlay)",
-        "🧱 Elastik Özellikler ve Modüller",
-        "🧊 3D ELF Görselleştirme"
+        "🧱 Elastik Özellikler ve Modüller"
     ],
     "🤖 Otonom NEB ve Difüzyon": [
         "📌 NEB Master İş Akışı",
@@ -8335,7 +8334,8 @@ elif secim == "🎨 Graphical Abstract Kolajı":
             
         except Exception as e:
             st.error(f"Görsel oluşturulurken bir hata meydana geldi: {e}")
-            import streamlit as st
+            
+import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 import io
