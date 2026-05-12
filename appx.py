@@ -7651,6 +7651,15 @@ elif secim == "📈 Murnaghan EOS Fit (CASTEP)":
 
 st.set_page_config(page_title="Kristal Yapı ve Malzeme Keşif Aracı", layout="wide")
 
+import streamlit as st
+import pandas as pd
+import numpy as np
+import itertools
+import math
+import io
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, AutoMinorLocator
+
 # ==========================================
 # 1. ORTAK VERİ TABANI (GLOBAL ALAN)
 # Tüm modüllerin erişebilmesi için en dışta tanımlanmıştır.
@@ -7715,7 +7724,9 @@ def get_elements_data():
 # 2. YAN MENÜ (SİDEBAR) VE ANA KONTROL
 # ==========================================
 st.sidebar.title("Menü")
-secim = st.sidebar.radio("Modül Seçin:", ["Ana Sayfa", "🔍 Kristal Yapı Bulucu", "🥞 2D RP Hidrit Bulucu"])
+
+# 🔴 YENİ MODÜLÜ BURADAKİ LİSTEYE EKLEDİK 🔴
+secim = st.sidebar.radio("Modül Seçin:", ["Ana Sayfa", "🔍 Kristal Yapı Bulucu", "🥞 2D RP Hidrit Bulucu", "📊 Yoğunluk Durumları (DOS/PDOS)"])
 
 # Tüm elementlerin listesi
 tam_element_listesi = list(get_elements_data().keys())
