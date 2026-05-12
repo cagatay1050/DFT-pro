@@ -7648,10 +7648,8 @@ elif secim == "📈 Murnaghan EOS Fit (CASTEP)":
             except Exception as e:
                 st.error(f"Fit işlemi sırasında bir matematiksel hata oluştu: {e}")
                 st.warning("İpucu: Hacim aralığınız çok dar veya verileriniz parabolik bir kavis (minimum nokta) oluşturmuyor olabilir.")
-
 # ==========================================
 # 1. ORTAK VERİ TABANI (GLOBAL ALAN)
-# Tüm modüllerin erişebilmesi için en dışta tanımlanmıştır.
 # ==========================================
 def get_elements_data():
     """
@@ -7710,12 +7708,22 @@ def get_elements_data():
 
 
 # ==========================================
-# MODÜL: KRİSTAL YAPI BULUCU (PEROVSKİT & SPİNEL)
+# 2. BAŞLANGIÇ VE ANA SEÇİM KONTROLÜ
+# ==========================================
+# Element listesini bir kez çağırıp hafızaya alıyoruz
+tam_element_listesi = list(get_elements_data().keys())
+
+# NOT: Eğer kendi menün varsa secim değişkenini oradan almalısın. 
+# Ama elif mantığının çalışması için mutlaka bir "if" başlatmalıyız.
+if secim == "Ana Sayfa":
+    st.title("🔬 Ana Sayfaya Hoş Geldiniz")
+    # Ana sayfa içeriği...
+
+# ==========================================
+# 3. MODÜL: KRİSTAL YAPI BULUCU (PEROVSKİT & SPİNEL)
 # ==========================================
 elif secim == "🔍 Kristal Yapı Bulucu":
     
-    tam_element_listesi = list(get_elements_data().keys())
-
     # --- PEROVSKİT FONKSİYONLARI ---
     def generate_perovskite(a_els, b_els, bp_els, enforce_charge):
         edata = get_elements_data()
@@ -7871,11 +7879,9 @@ elif secim == "🔍 Kristal Yapı Bulucu":
 
 
 # ==========================================
-# MODÜL: 2D RUDDLESDEN-POPPER (RP) HİDRİT BULUCU
+# 4. MODÜL: 2D RUDDLESDEN-POPPER (RP) HİDRİT BULUCU
 # ==========================================
 elif secim == "🥞 2D RP Hidrit Bulucu":
-
-    tam_element_listesi = list(get_elements_data().keys())
 
     def generate_rp_hydride(a_prime_els, a_els, b_els, bp_els, n_val, enforce_charge):
         edata = get_elements_data()
