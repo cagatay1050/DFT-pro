@@ -6067,7 +6067,7 @@ elif secim == "🎶 Fonon Band Yapısı":
 
             # --- 5. ÇİZİM İŞLEMİ ---
             if st.button("🚀 Grafiği Çiz ve Hazırla", type="primary", use_container_width=True):
-                fig, ax = plt.subplots(figsize=(8, 10)) 
+                fig, ax = plt.subplots(figsize=(6, 8)) 
 
                 for x_vals, y_vals in branches:
                     ax.plot(x_vals, y_vals, color=p_line_color, linewidth=p_line_width, alpha=0.9)
