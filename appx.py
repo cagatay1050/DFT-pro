@@ -189,7 +189,8 @@ menuler = {
         "📊 Yoğunluk Durumları (DOS/PDOS)",
         "⛰️ NEB Enerji Bariyeri (Energy Profile)",
         "📍 Çoklu Sıcaklık VDoS (Overlay)",
-        "🧱 Elastik Özellikler ve Modüller"
+        "🧱 Elastik Özellikler ve Modüller",
+        "🧊 3D ELF Görselleştirme"
     ],
     "🤖 Otonom NEB ve Difüzyon": [
         "📌 NEB Master İş Akışı",
@@ -2120,34 +2121,14 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
                 with cc_all[2]: fermi_color = st.color_picker("Fermi Çizgisi Rengi", value="#FF0000")
                 with cc_all[3]: k_alpha = st.slider("K-Çizgi Görünürlüğü", 0.0, 1.0, 0.4, 0.1)
 
-            st.markdown("**3. Metin, Malzeme ve Gap Yazısı Ayarları**")
+            st.markdown("**3. Metin Konumları**")
             cm1, cm2, cm3 = st.columns(3)
-            with cm1: 
-                panel_label = st.text_input("Panel Etiketi (a, b)", value="(a)")
-                p_text_x = st.number_input("Gap Metni X Konumu", value=max(b_kcoords)/2, step=0.5)
-                p_text_y = st.number_input("Gap Metni Y Konumu", value=def_mid_y, step=0.5)
-            with cm2: 
-                p_text_size = st.slider("Gap Metni Boyutu", min_value=8, max_value=36, value=16, step=1)
-                p_bg_alpha = st.slider("Gap Kutusu Şeffaflığı", min_value=0.0, max_value=1.0, value=0.8, step=0.05)
-                p_mat_name = st.text_input("Malzeme İsmi (Örn: MoS_2)", value="")
-            with cm3:
-                p_mat_size = st.slider("Malzeme Yazı Boyutu", min_value=10, max_value=40, value=24, step=1)
-                p_mat_x = st.slider("Malzeme X Konumu", min_value=-0.2, max_value=1.2, value=0.05, step=0.01)
-                p_mat_y = st.slider("Malzeme Y Konumu", min_value=-0.2, max_value=1.2, value=0.92, step=0.01)
-
-            st.markdown("**4. Grafik Boyutları**")
-            cf1, cf2 = st.columns(2)
-            with cf1: p_fig_width = st.slider("Grafik Genişliği", min_value=5, max_value=30, value=10, step=1)
-            with cf2: p_fig_height = st.slider("Grafik Yüksekliği", min_value=5, max_value=30, value=8, step=1)
+            with cm1: panel_label = st.text_input("Panel Etiketi (a, b)", value="(a)")
+            with cm2: p_text_x = st.number_input("Gap Metni X Konumu", value=max(b_kcoords)/2, step=0.5)
+            with cm3: p_text_y = st.number_input("Gap Metni Y Konumu", value=def_mid_y, step=0.5)
 
         # 🎨 ÇİZİM BÖLÜMÜ
-        
-        # Tüm grafikteki yazı tiplerini Times New Roman yapar
-        plt.rcParams['font.family'] = 'Times New Roman'
-        # Matematiksel LaTeX metinlerinin Times ile uyumlu olması için:
-        plt.rcParams['mathtext.fontset'] = 'stix'
-        
-        fig, ax = plt.subplots(figsize=(p_fig_width, p_fig_height))
+        fig, ax = plt.subplots(figsize=(10, 8))
 
         # Bantları Çizme (Hafızadan)
         if is_spin_plot:
@@ -2179,17 +2160,11 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
         for c in b_kcoords: 
             ax.axvline(c, color='blue', lw=1.5, zorder=0, alpha=k_alpha) 
 
-        # Band Gap Metni (Dinamik Yazı Boyutu ve Şeffaflık ile)
+        # Band Gap Metni
         if b_gap > 0.01:
             ax.text(p_text_x, p_text_y, f"Band gap = {b_gap:.2f} eV", 
-                    fontsize=p_text_size, fontweight='bold', ha='center', va='center', zorder=10,
-                    bbox=dict(facecolor='white', alpha=p_bg_alpha, edgecolor='none', boxstyle='round,pad=0.2'))
-
-        # Malzeme İsmi (Kullanıcı girdiyse)
-        if p_mat_name.strip() != "":
-            # LaTeX formatı için süslü parantez içine alıp $ sembolleri ile sarmalıyoruz
-            ax.text(p_mat_x, p_mat_y, fr"${p_mat_name}$", transform=ax.transAxes, 
-                    fontsize=p_mat_size, fontweight='bold', va='center', ha='left', zorder=15)
+                    fontsize=16, fontweight='bold', ha='center', va='center', zorder=10,
+                    bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.2'))
 
         # Eksen Formatlama
         ax.set_xticks(b_kcoords)
@@ -8193,148 +8168,6 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
                     st.download_button("SVG İndir (Vektörel)", buf_svg.getvalue(), "Band_Structure.svg", "image/svg+xml", use_container_width=True)
         else:
             st.info("Lütfen '1. Veri ve Fermi Seviyesi' sekmesinden bant verinizi yükleyin.")
-            # ==========================================
-# MODÜL 12: GRAPHICAL ABSTRACT OLUŞTURUCU (MANUEL KOLAJ)
-# ==========================================
-elif secim == "🎨 Graphical Abstract Kolajı":
-    st.header("Bilimsel Graphical Abstract (Görsel Özet) Tasarımcısı")
-    st.markdown("Yapay zeka kullanılmadan, **kendi ürettiğiniz grafikleri ve molekül çizimlerini** yükleyerek Elsevier, ACS ve Springer standartlarında profesyonel bir görsel özet oluşturun.")
-    st.markdown("---")
-
-    # --- 1. TUVAL (CANVAS) AYARLARI ---
-    st.subheader("1. Tuval (Arka Plan) Ayarları")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        canvas_preset = st.selectbox("Dergi Standardı", ["Elsevier (1328 x 531)", "ACS (975 x 525)", "Kare/Özel (1000 x 1000)"])
-        if "Elsevier" in canvas_preset:
-            c_width, c_height = 1328, 531
-        elif "ACS" in canvas_preset:
-            c_width, c_height = 975, 525
-        else:
-            c_width, c_height = 1000, 1000
-    with c2:
-        bg_color = st.color_picker("Arka Plan Rengi", value="#FFFFFF")
-    with c3:
-        # Şeffaflık opsiyonu
-        bg_transparent = st.checkbox("Şeffaf (Transparent) Arka Plan", value=False)
-
-    st.markdown("---")
-
-    # --- 2. GÖRSEL YÜKLEME VE KONTROL PANELİ ---
-    st.subheader("2. Görselleri Ekle ve Konumlandır")
-    st.info("💡 **İpucu:** Grafiklerinizin arka planı şeffaf (PNG) olursa tuvalde birbirlerinin üzerine bindiklerinde beyaz kutular oluşmaz.")
-    
-    uploaded_images = st.file_uploader("Grafik, Molekül veya Şema Yükleyin (Çoklu Seçim)", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-
-    # Görsel Kontrollerini Tutacağımız Liste
-    image_settings = []
-
-    if uploaded_images:
-        # Yüklenen her görsel için bir kontrol paneli (Slider'lar) oluştur
-        cols = st.columns(min(len(uploaded_images), 3)) # Yan yana en fazla 3 sütun
-        
-        for i, img_file in enumerate(uploaded_images):
-            with cols[i % 3]:
-                with st.expander(f"Görsel {i+1}: {img_file.name[:10]}...", expanded=True):
-                    # Görseli RAM'de aç (Hafif bir önizleme göster)
-                    st.image(img_file, use_container_width=True)
-                    
-                    # Konum ve Boyut Ayarları
-                    scale = st.slider(f"Boyut (Ölçek) ##{i}", 0.1, 3.0, 1.0, 0.05)
-                    pos_x = st.slider(f"Sağ/Sol (X Konumu) ##{i}", -500, c_width + 500, int(c_width/2) - 100, 10)
-                    pos_y = st.slider(f"Aşağı/Yukarı (Y Konumu) ##{i}", -500, c_height + 500, int(c_height/2) - 100, 10)
-                    
-                    image_settings.append({
-                        "file": img_file,
-                        "scale": scale,
-                        "x": pos_x,
-                        "y": pos_y
-                    })
-
-    st.markdown("---")
-
-    # --- 3. METİN (TEXT) VE SEMBOL EKLEME PANELİ ---
-    st.subheader("3. Metin, Artı (+) veya Ok (➔) Ekle")
-    n_texts = st.number_input("Kaç Adet Metin/Sembol Ekleyeceksiniz?", min_value=0, max_value=5, value=0)
-    
-    text_settings = []
-    if n_texts > 0:
-        t_cols = st.columns(min(n_texts, 3))
-        for i in range(n_texts):
-            with t_cols[i % 3]:
-                with st.expander(f"Metin KUTUSU {i+1}", expanded=True):
-                    t_val = st.text_input("Metin / Sembol", value="➔", key=f"tval_{i}")
-                    t_size = st.slider("Punto Boyutu", 12, 150, 60, key=f"tsize_{i}")
-                    t_color = st.color_picker("Renk", value="#000000", key=f"tcol_{i}")
-                    t_x = st.slider("X Konumu", 0, c_width, int(c_width/2), key=f"tx_{i}")
-                    t_y = st.slider("Y Konumu", 0, c_height, int(c_height/2), key=f"ty_{i}")
-                    
-                    text_settings.append({
-                        "text": t_val,
-                        "size": t_size,
-                        "color": t_color,
-                        "x": t_x,
-                        "y": t_y
-                    })
-
-    st.markdown("---")
-
-    # --- 4. MOTOR: ÇİZİM VE BİRLEŞTİRME (PIL) ---
-    st.subheader("4. Canlı Önizleme ve İndirme")
-    
-    if st.button("🎨 Graphical Abstract'ı Oluştur / Güncelle", type="primary", use_container_width=True):
-        try:
-            # 1. Tuvali Yarat
-            bg_tuple = (255, 255, 255, 0) if bg_transparent else tuple(int(bg_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4)) + (255,)
-            canvas = Image.new("RGBA", (c_width, c_height), bg_tuple)
-
-            # 2. Resimleri Tuvale Ekle
-            for sett in image_settings:
-                sett["file"].seek(0)
-                img_pil = Image.open(sett["file"]).convert("RGBA")
-                
-                # Boyutlandırma
-                new_size = (int(img_pil.width * sett["scale"]), int(img_pil.height * sett["scale"]))
-                img_pil = img_pil.resize(new_size, Image.Resampling.LANCZOS)
-                
-                # Tuvale Yapıştır (Maske kullanarak şeffaflığı koru)
-                canvas.paste(img_pil, (sett["x"], sett["y"]), img_pil)
-
-            # 3. Metinleri Tuvale Ekle
-            if text_settings:
-                draw = ImageDraw.Draw(canvas)
-                for ts in text_settings:
-                    # Not: Streamlit sunucusunda font dosyası (ttf) bulmak zor olabilir, 
-                    # PIL'in default fontunu boyutlandırarak veya basit font kullanarak çözüyoruz.
-                    try:
-                        # Windows/Linux ortak font denemesi
-                        font = ImageFont.truetype("arial.ttf", ts["size"])
-                    except:
-                        try:
-                            font = ImageFont.truetype("DejaVuSans.ttf", ts["size"])
-                        except:
-                            font = ImageFont.load_default() # Fallback
-                            
-                    draw.text((ts["x"], ts["y"]), ts["text"], fill=ts["color"], font=font)
-
-            # 4. Önizleme
-            # Siyah ekranda şeffaf png'ler iyi görünmez, bu yüzden arayüze özel arka plan ekleyelim
-            st.image(canvas, caption=f"Çözünürlük: {c_width} x {c_height} px", use_container_width=True)
-
-            # 5. İndirme Bağlantısı
-            buf = io.BytesIO()
-            canvas.save(buf, format="PNG")
-            st.download_button(
-                label="📥 Makale Formatında İndir (Yüksek Çözünürlüklü PNG)",
-                data=buf.getvalue(),
-                file_name="Graphical_Abstract_Origin.png",
-                mime="image/png",
-                use_container_width=True
-            )
-            
-        except Exception as e:
-            st.error(f"Görsel oluşturulurken bir hata meydana geldi: {e}")
-            
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
