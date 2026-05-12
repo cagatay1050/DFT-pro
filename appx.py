@@ -226,6 +226,7 @@ menuler = {
         "📈 Murnaghan EOS Fit (CASTEP)",
         "🔍 Kristal Yapı Bulucu",
         "🥞 2D RP Hidrit Bulucu",
+        "🧪 Stokiyometri ve Katkılama Analizi",
         "⚡ Spin-Polarize Bant Yapısı"
     ]
 }
@@ -8209,3 +8210,168 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
                     st.download_button("SVG İndir (Vektörel)", buf_svg.getvalue(), "Band_Structure.svg", "image/svg+xml", use_container_width=True)
         else:
             st.info("Lütfen '1. Veri ve Fermi Seviyesi' sekmesinden bant verinizi yükleyin.")
+ # ==========================================
+# 5. MODÜL: STOKİYOMETRİ VE KATKILAMA (DOPING) ANALİZİ
+# ==========================================
+elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
+    st.header("🧪 Dinamik Stokiyometri ve Katkılama (Doping) Analizi")
+    st.markdown("""
+    Bu modül, $A_x B_y Z_t K_v H_w$ formatındaki bir malzemenin stokiyometrik katsayılarını dinamik olarak kaydırıcılar (slider) ile değiştirerek, malzemenin **Gravimetrik Hidrojen Kapasitesini** ve **Tolerans Faktörünü (t)** anında hesaplamanızı sağlar.
+    """)
+
+    tam_element_listesi = [el for el in list(get_elements_data().keys()) if el != 'Boşluk']
+    edata = get_elements_data()
+
+    # --- Üst Panel: Genel Ayarlar ---
+    st.subheader("1. Genel Parametreler")
+    c_gen1, c_gen2 = st.columns(2)
+    with c_gen1:
+        h_count = st.number_input("Hidrojen (H) Atomu Sayısı (w)", min_value=0.0, max_value=24.0, value=6.0, step=0.25)
+    with c_gen2:
+        r_H = st.number_input("Hidrojen İyonik Yarıçapı (Å)", value=1.37, step=0.01)
+
+    st.markdown("---")
+    st.subheader("2. Element Slotları ve Oranlar (x, y, t, v)")
+    st.markdown("Örnekteki gibi $K_{1.75}Mg_{1.25}VH_6$ yapısını kurmak için: Slot 1'e **K** (A-Bölgesi), Slot 2'ye **Mg** (A-Bölgesi), Slot 3'e **Mg** (B-Bölgesi), Slot 4'e **V** (B-Bölgesi) seçebilirsiniz.")
+
+    slots = st.columns(4)
+    # Başlangıçta tam senin istediğin örneği default olarak yüklüyoruz:
+    default_configs = [
+        {"el": "K",  "site": "A-Bölgesi (CN=12)", "val": 1.75},
+        {"el": "Mg", "site": "A-Bölgesi (CN=12)", "val": 0.25},
+        {"el": "Mg", "site": "B-Bölgesi (CN=6)",  "val": 1.00},
+        {"el": "V",  "site": "B-Bölgesi (CN=6)",  "val": 1.00}
+    ]
+
+    element_data_list = []
+
+    for i in range(4):
+        with slots[i]:
+            st.markdown(f"**Slot {i+1}**")
+            aktif = st.checkbox("Slotu Aktif Et", value=True, key=f"aktif_{i}")
+            if aktif:
+                el = st.selectbox("Element", tam_element_listesi, index=tam_element_listesi.index(default_configs[i]["el"]), key=f"el_{i}")
+                site = st.selectbox("Kristal Bölgesi", ["A-Bölgesi (CN=12)", "B-Bölgesi (CN=6)", "Sadece Kütle Hesabı"], index=["A-Bölgesi (CN=12)", "B-Bölgesi (CN=6)", "Sadece Kütle Hesabı"].index(default_configs[i]["site"]), key=f"site_{i}")
+                
+                # Valans ve Yarıçap çekme
+                valans_dict = {}
+                if site == "A-Bölgesi (CN=12)":
+                    valans_dict = edata[el].get('r_CN12', {})
+                elif site == "B-Bölgesi (CN=6)":
+                    valans_dict = edata[el].get('r_CN6', {})
+                
+                valans_list = list(valans_dict.keys())
+                secili_valans = None
+                yari_cap = 0.0
+                
+                if valans_list:
+                    secili_valans = st.selectbox(f"Değerlik (Yük)", valans_list, key=f"val_{i}")
+                    yari_cap = valans_dict[secili_valans]
+                    st.caption(f"İyonik Yarıçap: {yari_cap} Å")
+                else:
+                    if site != "Sadece Kütle Hesabı":
+                        st.warning("Bu bölge için yarıçap veritabanında yok, tolerans faktörü hesabına katılmaz.")
+
+                miktar = st.slider("Miktar (Stokiyometri)", min_value=0.0, max_value=5.0, value=default_configs[i]["val"], step=0.05, key=f"amt_{i}")
+                
+                element_data_list.append({
+                    "el": el,
+                    "site": site,
+                    "r": yari_cap,
+                    "amt": miktar,
+                    "mass": edata[el]['mass']
+                })
+
+    # --- Hesaplama Bölümü ---
+    if len(element_data_list) > 0:
+        st.markdown("---")
+        st.subheader("📊 Analiz Sonuçları (Anlık Güncellenir)")
+
+        formula_dict = {}
+        total_mass = h_count * 1.008
+        r_A_sum, A_count, r_B_sum, B_count = 0.0, 0.0, 0.0, 0.0
+
+        for item in element_data_list:
+            amt = item["amt"]
+            if amt == 0: continue
+            
+            # 1. Aynı elementleri kimyasal formül için birleştir (örn. Mg A'dan ve B'den gelirse toplar)
+            if item["el"] in formula_dict:
+                formula_dict[item["el"]] += amt
+            else:
+                formula_dict[item["el"]] = amt
+                
+            # 2. Kütle Eklemesi
+            total_mass += amt * item["mass"]
+            
+            # 3. Yarıçap Ağırlıklı Ortalamaları (Tolerans faktörü için)
+            if item["site"] == "A-Bölgesi (CN=12)" and item["r"] > 0:
+                r_A_sum += amt * item["r"]
+                A_count += amt
+            elif item["site"] == "B-Bölgesi (CN=6)" and item["r"] > 0:
+                r_B_sum += amt * item["r"]
+                B_count += amt
+
+        # Latex Kimyasal Formül Çıktısı Oluşturma
+        formula_str = ""
+        for k, v in formula_dict.items():
+            if v == 1.0:
+                formula_str += f"{k}"
+            else:
+                formula_str += f"{k}_{{{v:g}}}" # :g sıfırları atar (örn 1.25 yazar)
+                
+        if h_count > 0:
+            formula_str += f" H_{{{h_count:g}}}"
+            
+        st.latex(rf"\mathbf{{Kimyasal\ Formül:\ {formula_str}}}")
+
+        # Gravimetrik Kapasite
+        grav_cap = (h_count * 1.008 / total_mass) * 100 if total_mass > 0 else 0
+
+        # Tolerans Faktörü Hesabı
+        t_factor = None
+        r_A_eff, r_B_eff = 0, 0
+        
+        if A_count > 0 and B_count > 0:
+            r_A_eff = r_A_sum / A_count
+            r_B_eff = r_B_sum / B_count
+            t_factor = (r_A_eff + r_H) / (math.sqrt(2) * (r_B_eff + r_H))
+
+        # Metrikleri Ekrana Basma
+        res_col1, res_col2, res_col3 = st.columns(3)
+        res_col1.metric("Toplam Mol Kütlesi", f"{total_mass:.2f} g/mol")
+        res_col2.metric("Gravimetrik H₂ Kapasitesi", f"% {grav_cap:.2f}")
+        
+        if t_factor is not None:
+            t_status = "İdeal Kübik" if 0.90 <= t_factor <= 1.05 else "Bozulmuş Kübik" if 0.80 <= t_factor < 0.90 else "Kararsız Yapı"
+            res_col3.metric("Efektif Tolerans (t)", f"{t_factor:.3f}", t_status, delta_color="off")
+        else:
+            res_col3.metric("Efektif Tolerans (t)", "Hesaplanamadı", "A veya B bölgesi eksik")
+
+        # Kararlılık Haritası Grafiği (Anlık tepki verir)
+        if t_factor is not None:
+            fig, ax = plt.subplots(figsize=(10, 2))
+            
+            # Renkli Çizgi Bar
+            ax.plot([0.6, 0.8], [0, 0], color='#e74c3c', lw=15, solid_capstyle='butt') # Kırmızı (Kararsız)
+            ax.plot([0.8, 0.9], [0, 0], color='#f1c40f', lw=15, solid_capstyle='butt') # Sarı (Bozulmuş)
+            ax.plot([0.9, 1.05], [0, 0], color='#2ecc71', lw=15, solid_capstyle='butt') # Yeşil (İdeal)
+            ax.plot([1.05, 1.2], [0, 0], color='#e74c3c', lw=15, solid_capstyle='butt') # Kırmızı (Kararsız)
+            
+            # Mevcut tolerans faktörü işaretçisi
+            ax.scatter([t_factor], [0], color='black', s=300, edgecolor='white', linewidth=2, zorder=3)
+            ax.text(t_factor, 0.05, f"t = {t_factor:.3f}", ha='center', va='bottom', fontsize=12, fontweight='bold')
+            
+            # Alt Metinler
+            ax.text(0.65, -0.05, "Kararsız", ha='center', va='top', fontsize=10, color='#e74c3c')
+            ax.text(0.85, -0.05, "Bozulmuş", ha='center', va='top', fontsize=10, color='#d35400')
+            ax.text(0.975, -0.05, "İdeal Kübik", ha='center', va='top', fontsize=10, color='#2ecc71')
+            ax.text(1.12, -0.05, "Kararsız", ha='center', va='top', fontsize=10, color='#e74c3c')
+
+            ax.set_xlim(0.6, 1.2)
+            ax.set_ylim(-0.15, 0.15)
+            ax.axis('off')
+            
+            st.pyplot(fig)
+            st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
+            
