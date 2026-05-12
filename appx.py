@@ -7721,10 +7721,12 @@ def get_elements_data():
 
 
 # ==========================================
-# 3. MODÜL: KRİSTAL YAPI BULUCU (PEROVSKİT & SPİNEL)
+# MODÜL: KRİSTAL YAPI BULUCU (PEROVSKİT & SPİNEL)
 # ==========================================
 elif secim == "🔍 Kristal Yapı Bulucu":
     
+    tam_element_listesi = list(get_elements_data().keys())
+
     # --- PEROVSKİT FONKSİYONLARI ---
     def generate_perovskite(a_els, b_els, bp_els, enforce_charge):
         edata = get_elements_data()
@@ -7878,10 +7880,13 @@ elif secim == "🔍 Kristal Yapı Bulucu":
                     x_sym = "O" if "Oksit" in sel_sX else "S"
                     st.download_button("💾 CIF İndir", generate_cif_spinel(a_el, b_el, x_sym), f"{a_el}{b_el}2{x_sym}4.cif", 'text/plain', key="dl_scif")
 
+
 # ==========================================
-# 4. MODÜL: 2D RUDDLESDEN-POPPER (RP) HİDRİT BULUCU
+# MODÜL: 2D RUDDLESDEN-POPPER (RP) HİDRİT BULUCU
 # ==========================================
 elif secim == "🥞 2D RP Hidrit Bulucu":
+
+    tam_element_listesi = list(get_elements_data().keys())
 
     def generate_rp_hydride(a_prime_els, a_els, b_els, bp_els, n_val, enforce_charge):
         edata = get_elements_data()
@@ -8009,8 +8014,7 @@ _atom_site_occupancy
                 bp_cif = atom_parcalari[3].split(" ")[0]
                 
                 st.download_button("💾 Yaklaşık CIF İndir", generate_cif_rp_hydride(ap_cif, a_cif, b_cif, bp_cif, n_katman), f"{sec_rp.replace(' ', '')}.cif", 'text/plain', key="dl_rpcif")
-
-#¹ ==============================================
+    # ==========================================
 # MODÜL: SPİN-POLARİZE BANT YAPISI (BAND STRUCTURE)
 # ==========================================
 elif secim == "⚡ Spin-Polarize Bant Yapısı":
