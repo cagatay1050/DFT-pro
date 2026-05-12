@@ -5898,8 +5898,8 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
                 p_wspace = st.slider("Grafikler Arası Boşluk", min_value=0.0, max_value=1.0, value=0.15, step=0.05)
             with cb2:
                 st.markdown("**Panel (a)/(b) Konumu**")
-                p_panel_x = st.slider("(a)/(b) X Konumu", min_value=-0.2, max_value=1.2, value=0.95, step=0.01)
-                p_panel_y = st.slider("(a)/(b) Y Konumu", min_value=-0.2, max_value=1.2, value=0.92, step=0.01)
+                p_panel_x = st.slider("(a)/(b) X Konumu", min_value=-0.2, max_value=1.2, value=0.15, step=0.01)
+                p_panel_y = st.slider("(a)/(b) Y Konumu", min_value=-0.2, max_value=1.2, value=0.15, step=0.01)
             with cb3:
                 st.markdown("**Malzeme İsmi**")
                 p_mat_name = st.text_input("Malzeme İsmi (Örn: MoS_2)", value="")
