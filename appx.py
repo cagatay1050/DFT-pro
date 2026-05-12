@@ -59,7 +59,7 @@ plt.rcParams['mathtext.fontset'] = 'stix'
 # ==========================================
 # 🎨 UZMAN SEVİYE GLOBAL GRAFİK MOTORU (RC PARAMS)
 # ==========================================
-with st.sidebar.expander("🎨 Kapsamlı Grafik Ayarları (OriginLab Tarzı)", expanded=False):
+with st.sidebar.expander("🎨 Kapsamlı Grafik Ayarları (OriginLab TarzıZ)", expanded=False):
     st.markdown("Bu paneldeki ayarlar, uygulamadaki **tüm** modüllerin grafik çizim stilini anında ve evrensel olarak değiştirir.")
     
     # --- 1. SEKME: Çözünürlük ve Boyut ---
