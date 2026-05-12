@@ -165,7 +165,7 @@ st.set_page_config(page_title="Çağatay Yamçıçıer Modüller", layout="wide"
 
 # (Buradan itibaren senin menü ve elif blokların eskisi gibi devam edecek...)
 # --- YAN MENÜ (SIDEBAR) ---
-st.sidebar.image("https://tr.wikipedia.org/wiki/Dosya:Osmaniye_Korkut_Ata_Üniversitesi.jpg", width=50)
+#st.sidebar.image("https://tr.wikipedia.org/wiki/Dosya:Osmaniye_Korkut_Ata_Üniversitesi.jpg", width=50)
 st.sidebar.title(" Analiz Paneli")
 st.sidebar.markdown("---")
 # ==========================================
@@ -7831,7 +7831,7 @@ elif secim == "🔍 Kristal Yapı Bulucu":
                 if val == "İdeal Kübik": return 'background-color: #2ecc71; color: white;'
                 elif "Bozulmuş" in val: return 'background-color: #f1c40f; color: black;'
                 else: return 'background-color: #e74c3c; color: white;'
-            st.dataframe(st.session_state['df_p'].style.applymap(highlight_t, subset=['Yapı']), use_container_width=True)
+            st.dataframe(st.session_state['df_p'].style.map(highlight_t, subset=['Yapı']), use_container_width=True)
             
             cp_dl1, cp_dl2 = st.columns(2)
             with cp_dl1:
