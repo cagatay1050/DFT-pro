@@ -2120,14 +2120,34 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
                 with cc_all[2]: fermi_color = st.color_picker("Fermi Çizgisi Rengi", value="#FF0000")
                 with cc_all[3]: k_alpha = st.slider("K-Çizgi Görünürlüğü", 0.0, 1.0, 0.4, 0.1)
 
-            st.markdown("**3. Metin Konumları**")
+            st.markdown("**3. Metin, Malzeme ve Gap Yazısı Ayarları**")
             cm1, cm2, cm3 = st.columns(3)
-            with cm1: panel_label = st.text_input("Panel Etiketi (a, b)", value="(a)")
-            with cm2: p_text_x = st.number_input("Gap Metni X Konumu", value=max(b_kcoords)/2, step=0.5)
-            with cm3: p_text_y = st.number_input("Gap Metni Y Konumu", value=def_mid_y, step=0.5)
+            with cm1: 
+                panel_label = st.text_input("Panel Etiketi (a, b)", value="(a)")
+                p_text_x = st.number_input("Gap Metni X Konumu", value=max(b_kcoords)/2, step=0.5)
+                p_text_y = st.number_input("Gap Metni Y Konumu", value=def_mid_y, step=0.5)
+            with cm2: 
+                p_text_size = st.slider("Gap Metni Boyutu", min_value=8, max_value=36, value=16, step=1)
+                p_bg_alpha = st.slider("Gap Kutusu Şeffaflığı", min_value=0.0, max_value=1.0, value=0.8, step=0.05)
+                p_mat_name = st.text_input("Malzeme İsmi (Örn: MoS_2)", value="")
+            with cm3:
+                p_mat_size = st.slider("Malzeme Yazı Boyutu", min_value=10, max_value=40, value=24, step=1)
+                p_mat_x = st.slider("Malzeme X Konumu", min_value=-0.2, max_value=1.2, value=0.05, step=0.01)
+                p_mat_y = st.slider("Malzeme Y Konumu", min_value=-0.2, max_value=1.2, value=0.92, step=0.01)
+
+            st.markdown("**4. Grafik Boyutları**")
+            cf1, cf2 = st.columns(2)
+            with cf1: p_fig_width = st.slider("Grafik Genişliği", min_value=5, max_value=30, value=10, step=1)
+            with cf2: p_fig_height = st.slider("Grafik Yüksekliği", min_value=5, max_value=30, value=8, step=1)
 
         # 🎨 ÇİZİM BÖLÜMÜ
-        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        # Tüm grafikteki yazı tiplerini Times New Roman yapar
+        plt.rcParams['font.family'] = 'Times New Roman'
+        # Matematiksel LaTeX metinlerinin Times ile uyumlu olması için:
+        plt.rcParams['mathtext.fontset'] = 'stix'
+        
+        fig, ax = plt.subplots(figsize=(p_fig_width, p_fig_height))
 
         # Bantları Çizme (Hafızadan)
         if is_spin_plot:
@@ -2159,11 +2179,17 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
         for c in b_kcoords: 
             ax.axvline(c, color='blue', lw=1.5, zorder=0, alpha=k_alpha) 
 
-        # Band Gap Metni
+        # Band Gap Metni (Dinamik Yazı Boyutu ve Şeffaflık ile)
         if b_gap > 0.01:
             ax.text(p_text_x, p_text_y, f"Band gap = {b_gap:.2f} eV", 
-                    fontsize=16, fontweight='bold', ha='center', va='center', zorder=10,
-                    bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.2'))
+                    fontsize=p_text_size, fontweight='bold', ha='center', va='center', zorder=10,
+                    bbox=dict(facecolor='white', alpha=p_bg_alpha, edgecolor='none', boxstyle='round,pad=0.2'))
+
+        # Malzeme İsmi (Kullanıcı girdiyse)
+        if p_mat_name.strip() != "":
+            # LaTeX formatı için süslü parantez içine alıp $ sembolleri ile sarmalıyoruz
+            ax.text(p_mat_x, p_mat_y, fr"${p_mat_name}$", transform=ax.transAxes, 
+                    fontsize=p_mat_size, fontweight='bold', va='center', ha='left', zorder=15)
 
         # Eksen Formatlama
         ax.set_xticks(b_kcoords)
