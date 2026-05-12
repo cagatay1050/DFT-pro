@@ -6047,17 +6047,24 @@ elif secim == "🎶 Fonon Band Yapısı":
             st.markdown("### 4. Grafik İnce Ayarları")
             with st.expander("📐 Eksen, Çizgi ve Tipografi Ayarları", expanded=True):
                 c1, c2, c3 = st.columns(3)
+                
                 with c1:
-                    st.markdown("**Y Ekseni Ayarları**")
+                    st.markdown("**Y Ekseni ve Boyut Ayarları**")
                     p_y_min = st.number_input("Min Frekans (THz)", value=-2.0, step=1.0)
                     p_y_max = st.number_input("Maks Frekans (THz)", value=float(np.ceil(max([max(y) for x, y in branches])))+2.0, step=1.0)
                     p_y_step = st.number_input("Y Ekseni Adımı", value=10.0, step=5.0)
+                    st.markdown("**Grafik Boyutları**") # EKLENDİ
+                    p_fig_width = st.slider("Grafik Genişliği", min_value=3, max_value=20, value=6, step=1)
+                    p_fig_height = st.slider("Grafik Yüksekliği", min_value=3, max_value=20, value=8, step=1)
                 
                 with c2:
                     st.markdown("**Çizgi Stili**")
                     p_line_color = st.color_picker("Band Rengi", value="#0000FF") 
                     p_line_width = st.number_input("Çizgi Kalınlığı", value=2.0, step=0.5)
-                    p_hline = st.checkbox("y=0 Kararlılık Çizgisini Göster", value=True)
+                    st.markdown("**Kararlılık (y=0) Çizgisi**") # EKLENDİ
+                    p_hline = st.checkbox("y=0 Çizgisini Göster", value=True)
+                    p_hline_color = st.color_picker("0 Çizgisi Rengi", value="#000000")
+                    p_hline_style = st.selectbox("0 Çizgisi Türü", options=["-", "--", "-.", ":"], index=0, help="'-' (Düz), '--' (Kesik), '-.' (Noktalı Kesik), ':' (Noktalı)")
                 
                 with c3:
                     st.markdown("**Tipografi ve Çıktı**")
@@ -6067,13 +6074,18 @@ elif secim == "🎶 Fonon Band Yapısı":
 
             # --- 5. ÇİZİM İŞLEMİ ---
             if st.button("🚀 Grafiği Çiz ve Hazırla", type="primary", use_container_width=True):
-                fig, ax = plt.subplots(figsize=(6, 8)) 
+                # TİMES NEW ROMAN AYARI EKLENDİ
+                plt.rcParams['font.family'] = 'Times New Roman'
+                
+                # GRAFİK BOYUTLARI DİNAMİK YAPILDI
+                fig, ax = plt.subplots(figsize=(p_fig_width, p_fig_height)) 
 
                 for x_vals, y_vals in branches:
                     ax.plot(x_vals, y_vals, color=p_line_color, linewidth=p_line_width, alpha=0.9)
 
+                # y=0 ÇİZGİSİ DİNAMİK YAPILDI
                 if p_hline:
-                    ax.axhline(0, color='black', linestyle='-', linewidth=1.2, zorder=0)
+                    ax.axhline(0, color=p_hline_color, linestyle=p_hline_style, linewidth=1.2, zorder=0)
 
                 for ep in end_points:
                     ax.axvline(x=ep, color='black', linestyle='-', linewidth=1.0, zorder=0)
