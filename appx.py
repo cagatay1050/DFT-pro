@@ -7744,8 +7744,11 @@ elif secim == "🔍 Kristal Yapı Bulucu":
                 if enforce_charge and not is_balanced: continue 
                     
                 rA, rB, rBP = edata[a]['r_CN12'][vA], edata[b]['r_CN6'][vB], edata[bp]['r_CN6'][vBP]
+                
+                # Tolerans (t) ve Oktahedral (μ) Faktör Hesaplamaları
                 r_B_eff = (rB + rBP) / 2.0
                 t_factor = (rA + r_H) / (math.sqrt(2) * (r_B_eff + r_H))
+                mu_factor = r_B_eff / r_H  # μ = (rB + rBP) / 2*rH
                 
                 mass_total = (2 * edata[a]['mass']) + edata[b]['mass'] + edata[bp]['mass'] + (6 * 1.008)
                 wt_cap = ((6 * 1.008) / mass_total) * 100
@@ -7757,6 +7760,7 @@ elif secim == "🔍 Kristal Yapı Bulucu":
                     "A/B/B'": f"{a} / {b} / {bp}",
                     "Yükler": f"+{vA} / +{vB} / +{vBP}",
                     "Tolerans (t)": round(t_factor, 3),
+                    "Oktahedral Faktör (μ)": round(mu_factor, 3), # <--- TABLOYA EKLENDİ
                     "Yapı": t_status,
                     "H Kapasitesi (%)": round(wt_cap, 2)
                 })
@@ -7877,139 +7881,6 @@ elif secim == "🔍 Kristal Yapı Bulucu":
                     b_el = satir["B (Okta)"].split(" ")[0]
                     x_sym = "O" if "Oksit" in sel_sX else "S"
                     st.download_button("💾 CIF İndir", generate_cif_spinel(a_el, b_el, x_sym), f"{a_el}{b_el}2{x_sym}4.cif", 'text/plain', key="dl_scif")
-
-
-# ==========================================
-# 4. MODÜL: 2D RUDDLESDEN-POPPER (RP) HİDRİT BULUCU
-# ==========================================
-elif secim == "🥞 2D RP Hidrit Bulucu":
-
-    def generate_rp_hydride(a_prime_els, a_els, b_els, bp_els, n_val, enforce_charge):
-        edata = get_elements_data()
-        results = []
-        r_H = 1.37  
-        
-        # Eğer n=1 ise A katyonu kullanılmaz
-        if n_val == 1:
-            a_els = ["Boşluk"]
-            
-        for ap, a, b, bp in itertools.product(a_prime_els, a_els, b_els, bp_els):
-            vAP_list = list(edata[ap]['r_CN12'].keys()) if ap != "Boşluk" else [0]
-            vA_list = list(edata[a]['r_CN12'].keys()) if a != "Boşluk" else [0]
-            vB_list = list(edata[b]['r_CN6'].keys())
-            vBP_list = list(edata[bp]['r_CN6'].keys())
-            
-            if not vAP_list or not vB_list or not vBP_list: continue
-                
-            for vAP, vA, vB, vBP in itertools.product(vAP_list, vA_list, vB_list, vBP_list):
-                total_metal_charge = (2 * vAP) + ((n_val - 1) * vA) + (n_val / 2 * vB) + (n_val / 2 * vBP)
-                target_charge = 3 * n_val + 1
-                
-                is_balanced = (total_metal_charge == target_charge)
-                if enforce_charge and not is_balanced: continue 
-                    
-                if n_val == 1:
-                    formula = f"{ap}4 {b} {bp} H8"
-                    mass_total = (4 * edata[ap]['mass']) + edata[b]['mass'] + edata[bp]['mass'] + (8 * 1.008)
-                elif n_val % 2 != 0:
-                    formula = f"{ap}4 {a if a!='Boşluk' else ''}{2*(n_val-1)} {b}{n_val} {bp}{n_val} H{2*(3*n_val+1)}"
-                    mass_total = (4 * edata[ap]['mass']) + (2*(n_val-1)*edata[a]['mass']) + (n_val*edata[b]['mass']) + (n_val*edata[bp]['mass']) + (2*(3*n_val+1)*1.008)
-                else:
-                    formula = f"{ap}2 {a if a!='Boşluk' else ''}{n_val-1} {b}{int(n_val/2)} {bp}{int(n_val/2)} H{3*n_val+1}"
-                    mass_total = (2 * edata[ap]['mass']) + ((n_val-1)*edata[a]['mass']) + (int(n_val/2)*edata[b]['mass']) + (int(n_val/2)*edata[bp]['mass']) + ((3*n_val+1)*1.008)
-                
-                rB, rBP = edata[b]['r_CN6'][vB], edata[bp]['r_CN6'][vBP]
-                r_B_eff = (rB + rBP) / 2.0
-                
-                r_A_eff = edata[a]['r_CN12'].get(vA, 0) if n_val > 1 else edata[ap]['r_CN12'][vAP]
-                t_factor = (r_A_eff + r_H) / (math.sqrt(2) * (r_B_eff + r_H))
-                
-                wt_cap = ((float(formula.split('H')[-1])) * 1.008 / mass_total) * 100
-                
-                results.append({
-                    "Formül": formula.replace(" 0", "").replace(" 1 ", " ").strip(),
-                    "Katman (n)": n_val,
-                    "A' / A / B / B'": f"{ap} (+{vAP}) / {'Yok' if n_val==1 else a+' (+'+str(vA)+')'} / {b} (+{vB}) / {bp} (+{vBP})",
-                    "Blok Toleransı (t)": round(t_factor, 3),
-                    "Mol Kütlesi": round(mass_total, 2),
-                    "H Kapasitesi (%)": round(wt_cap, 2)
-                })
-        return pd.DataFrame(results).drop_duplicates()
-
-    def generate_cif_rp_hydride(ap, a, b, bp, n_val):
-        c_length = 12.0 + (n_val * 4.0) 
-        
-        cif_content = f"""data_{ap}_{a}_{b}_{bp}_H_RP_n{n_val}
-_symmetry_space_group_name_H-M   'I 4/m m m'
-_cell_length_a 4.0000
-_cell_length_b 4.0000
-_cell_length_c {c_length:.4f}
-_cell_angle_alpha 90.0
-_cell_angle_beta 90.0
-_cell_angle_gamma 90.0
-loop_
-_atom_site_label
-_atom_site_type_symbol
-_atom_site_fract_x
-_atom_site_fract_y
-_atom_site_fract_z
-_atom_site_occupancy
-{b}1 {b} 0.0 0.0 0.0 0.5
-{bp}1 {bp} 0.0 0.0 0.0 0.5
-{ap}1 {ap} 0.0 0.0 0.35 1.0\n"""
-        
-        if n_val > 1:
-            cif_content += f"{a}1 {a} 0.0 0.0 0.15 1.0\n"
-            
-        cif_content += "H1 H 0.0 0.5 0.0 1.0\nH2 H 0.0 0.0 0.18 1.0"
-        return cif_content
-
-    # --- ARAYÜZ TASARIMI ---
-    st.header("🥞 2D Ruddlesden-Popper (RP) Hidrit Çift Perovskit Aday Üretici")
-    st.markdown("""
-    Bu modül **$A'_{2}A_{n-1}B_{n}X_{3n+1}$** genel formülünü temel alarak $H^-$ anyonlu, yüksek boyutlu katmanlı kuantum materyaller (örneğin spintronik için $K_4NiVH_8$) üretir.
-    """)
-    
-    sadece_elementler = [el for el in tam_element_listesi if el != 'Boşluk']
-    
-    col_n, col_enf = st.columns(2)
-    with col_n: n_secim = st.slider("Katman Sayısı (n) [n=1 ise A katyonu otomatik iptal olur]", min_value=1, max_value=3, value=1)
-    with col_enf: enf_rp = st.checkbox("Sadece Yük Dengesi Sağlananları Göster", value=True, key="chk_rp")
-
-    crp1, crp2, crp3, crp4 = st.columns(4)
-    with crp1: sel_A_prime = st.multiselect("A' Bölgesi (Bariyer)", sadece_elementler, default=['K', 'Rb', 'Cs'], key="rpAP")
-    with crp2: sel_A_cage = st.multiselect("A Bölgesi (Kafes)", sadece_elementler, default=['Cs', 'Ba', 'Sr'], key="rpA", disabled=(n_secim==1))
-    with crp3: sel_B1 = st.multiselect("B' Bölgesi (Geçiş Metali)", sadece_elementler, default=['Ni', 'Fe', 'Co'], key="rpB")
-    with crp4: sel_B2 = st.multiselect("B'' Bölgesi (Geçiş Metali)", sadece_elementler, default=['V', 'Ti', 'Cr'], key="rpBP")
-
-    if st.button("🚀 2D RP Hidrit Üret", type="primary"):
-        with st.spinner(f'n={n_secim} Katmanlı RP yapılar hesaplanıyor...'):
-            df_rp = generate_rp_hydride(sel_A_prime, sel_A_cage, sel_B1, sel_B2, n_secim, enf_rp)
-            if df_rp.empty:
-                st.warning("Bu kombinasyonla yük dengesi sağlanan kararlı bir katmanlı yapı bulunamadı.")
-            else:
-                st.success(f"{len(df_rp)} adet 2D RP hidrit bulundu!")
-                st.session_state['df_rp'] = df_rp
-
-    if 'df_rp' in st.session_state:
-        st.dataframe(st.session_state['df_rp'], use_container_width=True)
-        
-        rp_dl1, rp_dl2 = st.columns(2)
-        with rp_dl1:
-            st.download_button("📊 Tabloyu CSV İndir", st.session_state['df_rp'].to_csv(index=False).encode('utf-8'), '2D_RP_hydrides.csv', 'text/csv', key="dl_rpcsv")
-        with rp_dl2:
-            sec_rp = st.selectbox("CIF için malzeme seçin (I4/mmm İdeal Yapı):", st.session_state['df_rp']['Formül'].unique(), key="cif_rp")
-            if sec_rp:
-                satir = st.session_state['df_rp'][st.session_state['df_rp']['Formül'] == sec_rp].iloc[0]
-                n_katman = satir["Katman (n)"]
-                atom_parcalari = satir["A' / A / B / B'"].split(" / ")
-                
-                ap_cif = atom_parcalari[0].split(" ")[0]
-                a_cif = atom_parcalari[1].split(" ")[0] if n_katman > 1 else "Boşluk"
-                b_cif = atom_parcalari[2].split(" ")[0]
-                bp_cif = atom_parcalari[3].split(" ")[0]
-                
-                st.download_button("💾 Yaklaşık CIF İndir", generate_cif_rp_hydride(ap_cif, a_cif, b_cif, bp_cif, n_katman), f"{sec_rp.replace(' ', '')}.cif", 'text/plain', key="dl_rpcif")
     # ==========================================
 # MODÜL: SPİN-POLARİZE BANT YAPISI (BAND STRUCTURE)
 # ==========================================
