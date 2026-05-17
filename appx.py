@@ -218,6 +218,7 @@ menuler = {
     ],
     "🛠️ Yardımcı Araçlar ve Scriptler": [
         "✍️ Akademik Paraphrase (Yapay Zeka)",
+        "✍️ AI Akademik Editör Pro",
         "📖 Dergi Bulucu (Journal Finder Pro)",
         "🧪 Hidrür Aday Jeneratörü",
         "🔍 Yüzey Enerjisi Analizörü (Script)",
@@ -8444,3 +8445,129 @@ elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
                             st.error(f"🚨 Analiz Motorunda Teknik Hata Oluştu: {str(e)}")
         else:
             st.info("👈 Sol taraftaki alana makale özetini girip 'Dergileri Bul' butonuna tıklayarak küresel taramayı başlatabilirsiniz.")
+            
+            
+            
+            
+            
+elif secim == "✍️ AI Akademik Editör Pro":
+    
+    st.title("✍️ AI Akademik Editör Pro")
+    st.markdown("Zotero Entegreli, Renkli Blok ve Gelişmiş Tablo Destekli Akademik Yazım Alanı.")
+    st.markdown("---")
+
+    # --- SESSION STATE BAŞLATMA (Veri Kaybını Önlemek İçin) ---
+    if "editor_metni" not in st.session_state:
+        st.session_state.editor_metni = (
+            "# 1. Introduction\n"
+            "The thermodynamic stability of Li-Mg alloys has been extensively simulated using DFT methods.\n\n"
+            "> **📌 IMPORTANT NOTE:** Ensure all cutoff energy parameters are converged at 520 eV.\n\n"
+            "| Alloy System | Lattice Parameter (Å) | Formation Energy (eV/atom) |\n"
+            "| :--- | :---: | :---: |\n"
+            "| Li-Mg (A1) | 3.52 | -0.124 |\n"
+            "| Li-Mg (B2) | 3.48 | -0.215 |\n"
+        )
+    if "atiflar" not in st.session_state:
+        st.session_state.atiflar = []
+
+    # --- MODÜLÜN YAN SEKMELERİ (Zotero ve Araçlar Sol Panele veya Üste) ---
+    tab1, tab2, tab3 = st.tabs(["🔍 Zotero Referans Ekle", "📊 Tablo & Grafik Şablonu", "🎨 Renkli Blok & Biçim"])
+
+    with tab1:
+        st.markdown("🔗 **Zotero Kütüphanenizde Arayın**")
+        c_search, c_btn = st.columns([3, 1])
+        with c_search:
+            zotero_query = st.text_input("Yazar Adı, Yıl veya Makale Başlığı Girin...", placeholder="Örn: Yamcicier 2025")
+        with c_btn:
+            st.markdown("<div style='padding-top:24px;'></div>", unsafe_allow_html=True)
+            ara_zotero = st.button("📚 Kaynağı Getir")
+        
+        if ara_zotero and zotero_query:
+            # Burası gerçek Zotero API'sine bağlanacak alandır. Şimdilik akademik bir simülasyon yapıyoruz:
+            st.success("Zotero'da 1 Eşleşme Bulundu!")
+            found_ref = "[1] Yamçıçıer, Ç. et al. (2025). 'First-principles study on Li-Mg alloys for hydrogen storage.' Journal of Power Sources."
+            
+            # Atıfı listeye ekle
+            if found_ref not in st.session_state.atiflar:
+                st.session_state.atiflar.append(found_ref)
+            
+            # Metnin sonuna otomatik ekleme kodu butonu
+            st.code("[1]", language="markdown")
+            st.caption("Yukarıdaki atıf kodunu kopyalayıp metninizde istediğiniz yere yapıştırın.")
+
+    with tab2:
+        st.markdown("🧱 **Hızlı Akademik Tablo Taslakları**")
+        st.caption("Aşağıdaki hazır tablo kodunu kopyalayıp editöre yapıştırarak değerleri değiştirebilirsiniz:")
+        st.code(
+            "| Element | H-Storage (wt%) | Temperature (K) |\n"
+            "| :--- | :---: | :---: |\n"
+            "| MgH2 | 7.6 | 573 |\n"
+            "| LiH | 12.7 | 650 |", 
+            language="markdown"
+        )
+
+    with tab3:
+        st.markdown("🎨 **Akademik Blok ve Girinti Kodları**")
+        col_b1, col_b2 = st.columns(2)
+        with col_b1:
+            st.markdown("**Gri Alıntı / Girintili Blok**")
+            st.code("> Buraya yazılan yazı gri bir çizgiyle sağa ötelenir (Girinti olur).", language="markdown")
+        with col_b2:
+            st.markdown("**Renkli Bilgi Kutusu (Streamlit Native)**")
+            st.code("st.info('Önemli veri notu')", language="python")
+
+    st.markdown("---")
+
+    # --- ANA EDİTÖR ALANI ---
+    col_left, col_right = st.columns(2, gap="large")
+
+    with col_left:
+        st.markdown("### 📝 Makale Yazım Paneli")
+        
+        # Word konforunda girinti/çıkıntı ve kısayollar için text_area'yı zenginleştiriyoruz
+        yazi = st.text_area(
+            "Yazım Alanı", 
+            value=st.session_state.editor_metni, 
+            height=600, 
+            label_visibility="collapsed"
+        )
+        st.session_state.editor_metni = yazi # Değişiklikleri anında kaydet
+
+    with col_right:
+        st.markdown("### 🖼️ Canlı Makale Önizlemesi (Donma Yapmaz)")
+        
+        # Canlı Çıktı Alanı
+        with st.container(border=True):
+            # 1. Ana Metni Bas
+            st.markdown(st.session_state.editor_metni)
+            
+            # 2. Eğer Zotero'dan atıf eklendiyse otomatik Kaynakça (References) oluştur
+            if st.session_state.atiflar:
+                st.markdown("### References")
+                for atif in st.session_state.atiflar:
+                    st.markdown(atif)
+
+    # --- ARKA PLAN STİL DESTEĞİ (CSS ile Kelime İşlemciyi Güzelleştirme) ---
+    st.markdown(
+        """
+        <style>
+        /* Girinti (Blockquote) tasarımını OriginLab/Akademik konsepte uydurma */
+        blockquote {
+            background-color: #F3F4F6;
+            border-left: 5px solid #1E3A8A !important;
+            padding: 10px 15px;
+            border-radius: 4px;
+        }
+        /* Tabloların dergi formatında şık görünmesi */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background-color: #1E3A8A;
+            color: white !important;
+        }
+        </style>
+        """, 
+        unsafe_allow_html=True
+    )
