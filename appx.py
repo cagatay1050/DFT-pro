@@ -228,7 +228,7 @@ menuler = {
         "🥞 2D RP Hidrit Bulucu",
         "🧪 Stokiyometri ve Katkılama Analizi",
         "⚡ Spin-Polarize Bant Yapısı",
-        "📖 Dergi Bulucu"
+        "📖 Dergi Bulucu": 
     ]
 }
 
@@ -8246,105 +8246,3 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             
             st.pyplot(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
-            
-# ==========================================
-# 6. MODÜL: Dergi Bulucu
-# ==========================================
-elif secim == "📖 Dergi Bulucu":            
-
-# Sayfa ayarları
-st.set_page_config(page_title="Journal Finder Pro", page_icon="📖", layout="wide")
-
-# Sabitler
-STOP_WORDS = {'the', 'is', 'in', 'and', 'to', 'of', 'a', 'for', 'with', 'on', 'this', 'that', 'by', 'as', 'an', 'we', 'are', 'from', 'it', 'be', 'has', 'have', 'was', 'were', 'or', 'which', 'their', 'can', 'not', 'at', 'but', 'all', 'such', 'more', 'they', 'our', 'study', 'research', 'paper', 'article', 'results', 'using', 'based', 'used', 'method', 'proposed', 'analysis', 'data', 'model', 'approach', 'performance', 'evaluation', 'effect', 'impact'}
-PUBLISHER_IDS = {
-    'Elsevier': 'https://openalex.org/P4310320990',
-    'Springer Nature': 'https://openalex.org/P4310319965',
-    'Wiley': 'https://openalex.org/P4310320503',
-    'Taylor & Francis': 'https://openalex.org/P4310320547',
-    'IEEE': 'https://openalex.org/P4310319808',
-    'MDPI': 'https://openalex.org/P4310320561'
-}
-
-def extract_keywords(text):
-    text = re.sub(r'[^\w\s]', ' ', text.lower())
-    words = text.split()
-    words = [w for w in words if len(w) > 4 and w not in STOP_WORDS]
-    
-    frequencies = {}
-    for w in words:
-        frequencies[w] = frequencies.get(w, 0) + 1
-        
-    sorted_words = sorted(frequencies.keys(), key=lambda x: frequencies[x], reverse=True)
-    return sorted_words[:4]
-
-# --- Ana Arayüz ---
-st.title("📖 Journal Finder Pro")
-st.markdown("Yapay zeka ve OpenAlex veritabanı destekli dergi bulucu.")
-
-col1, col2 = st.columns([1, 2], gap="large")
-
-with col1:
-    st.subheader("🔍 Makale Bilgileri")
-    abstract = st.text_area("Özet (Abstract) *", height=200, placeholder="Makalenizin İngilizce özetini buraya yapıştırın...")
-    keywords = st.text_input("Anahtar Kelimeler (İsteğe Bağlı)", placeholder="Örn: machine learning, oncology (Virgülle ayırın)")
-    
-    pre_selected_pubs = st.multiselect("Hedef Yayınevleri (Ön Seçim)", list(PUBLISHER_IDS.keys()), help="Seçim yapmazsanız tüm yayınevleri taranır.")
-    include_tr_dizin = st.checkbox("🇹🇷 TR-Dizin & Türkiye Dergilerini Dahil Et")
-    
-    search_button = st.button("Dergileri Bul", type="primary", use_container_width=True)
-
-with col2:
-    if search_button:
-        if not abstract.strip() and not keywords.strip():
-            st.error("Lütfen özet veya anahtar kelime girin.")
-        else:
-            with st.spinner("Veritabanları Taranıyor..."):
-                # 1. Arama Terimlerini Belirle
-                if keywords.strip():
-                    search_terms = [k.strip() for k in keywords.split(',') if len(k) > 2][:4]
-                else:
-                    search_terms = extract_keywords(abstract)
-                
-                if not search_terms:
-                    st.error("Arama yapmak için yeterli anlamlı kelime bulunamadı.")
-                else:
-                    st.info(f"Yapay zeka özetinizden şu kelimeleri çıkardı: **{', '.join(search_terms)}**")
-                    search_query = " ".join(search_terms)
-                    
-                    # API İstekleri (React kodundaki mantık)
-                    top_sources = []
-                    try:
-                        # Örnek Global Tarama (Sadece OpenAlex works endpoint'i)
-                        works_url = f"https://api.openalex.org/works?search={requests.utils.quote(search_query)}&group_by=primary_location.source.id&per-page=10"
-                        res = requests.get(works_url).json()
-                        
-                        if "group_by" in res and res["group_by"]:
-                            source_ids = [g["key"].split('/')[-1] for g in res["group_by"] if g.get("key")]
-                            
-                            # Dergi detaylarını çek
-                            sources_url = f"https://api.openalex.org/sources?filter=openalex:{'|'.join(source_ids)}"
-                            sources_res = requests.get(sources_url).json()
-                            top_sources = sources_res.get("results", [])
-                        
-                        if not top_sources:
-                            st.warning("Bu kriterlere uygun dergi bulunamadı.")
-                        else:
-                            st.success(f"{len(top_sources)} adet dergi bulundu!")
-                            
-                            # Sonuçları Gösterme
-                            for item in top_sources:
-                                h_index = item.get('summary_stats', {}).get('h_index', 0)
-                                is_oa = item.get('is_oa', False)
-                                
-                                with st.container(border=True):
-                                    st.subheader(item.get('display_name', 'Bilinmeyen Dergi'))
-                                    col_a, col_b, col_c = st.columns(3)
-                                    col_a.metric("H-Index", h_index)
-                                    col_b.metric("Erişim", "Açık Erişim (OA)" if is_oa else "Abonelik")
-                                    col_c.markdown(f"[Dergi Sayfası]({item.get('homepage_url')})" if item.get('homepage_url') else "Link Yok")
-
-                    except Exception as e:
-                        st.error(f"Bir hata oluştu: {str(e)}")
-    else:
-        st.info("👈 Aramaya başlamak için sol taraftaki paneli kullanın.")
