@@ -8247,7 +8247,6 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             st.pyplot(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
             
-<<<<<<< HEAD
 # ==========================================
 # 6. MODÜL: Dergi Bulucu
 # ==========================================
