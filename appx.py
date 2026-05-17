@@ -60,7 +60,7 @@ plt.rcParams['mathtext.fontset'] = 'stix'
 # ==========================================
 # 🎨 UZMAN SEVİYE GLOBAL GRAFİK MOTORU (RC PARAMS)
 # ==========================================
-with st.sidebar.expander("🎨 Kapsamlı Grafik Ayarları (OriginLab TarzıZ)", expanded=False):
+with st.sidebar.expander("🎨 Kapsam Grafik Ayarları (OriginLab TarzıZ)", expanded=False):
     st.markdown("Bu paneldeki ayarlar, uygulamadaki **tüm** modüllerin grafik çizim stilini anında ve evrensel olarak değiştirir.")
     
     # --- 1. SEKME: Çözünürlük ve Boyut ---
@@ -8247,6 +8247,7 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             st.pyplot(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
             
+<<<<<<< HEAD
 # ==========================================
 # 6. MODÜL: Dergi Bulucu
 # ==========================================
@@ -8348,3 +8349,5 @@ with col2:
                         st.error(f"Bir hata oluştu: {str(e)}")
     else:
         st.info("👈 Aramaya başlamak için sol taraftaki paneli kullanın.")
+=======
+>>>>>>> 380537c32052eafa932c126c2af8e9248472c618
