@@ -218,6 +218,7 @@ menuler = {
     ],
     "🛠️ Yardımcı Araçlar ve Scriptler": [
         "✍️ Akademik Paraphrase (Yapay Zeka)",
+        "📖 Dergi Bulucu (Journal Finder Pro)",
         "🧪 Hidrür Aday Jeneratörü",
         "🔍 Yüzey Enerjisi Analizörü (Script)",
         "🧹 VASP CONTCAR Katlama ve Temizleme Modülü",
@@ -8245,3 +8246,142 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             
             st.pyplot(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
+# ==========================================
+# MENÜ SEÇİMİ (Senin kodunda zaten benzer bir yapı vardır)
+# ==========================================
+# secili_kategori = st.sidebar.selectbox("Kategori Seçin", list(menuler.keys()))
+# secili_modul = st.sidebar.radio("Modül", menuler[secili_kategori])
+
+# ... Önceki elif blokların ...
+
+elif secili_modul == "📖 Dergi Bulucu (Journal Finder Pro)":
+    
+    # -----------------------------------------------------
+    # JOURNAL FINDER PRO - LOKAL FONKSİYONLAR VE SABİTLER
+    # -----------------------------------------------------
+    STOP_WORDS = {'the', 'is', 'in', 'and', 'to', 'of', 'a', 'for', 'with', 'on', 'this', 'that', 'by', 'as', 'an', 'we', 'are', 'from', 'it', 'be', 'has', 'have', 'was', 'were', 'or', 'which', 'their', 'can', 'not', 'at', 'but', 'all', 'such', 'more', 'they', 'our', 'study', 'research', 'paper', 'article', 'results', 'using', 'based', 'used', 'method', 'proposed', 'analysis', 'data', 'model', 'approach', 'performance', 'evaluation', 'effect', 'impact'}
+    PUBLISHER_IDS = {
+        'Elsevier': 'https://openalex.org/P4310320990',
+        'Springer Nature': 'https://openalex.org/P4310319965',
+        'Wiley': 'https://openalex.org/P4310320503',
+        'Taylor & Francis': 'https://openalex.org/P4310320547',
+        'IEEE': 'https://openalex.org/P4310319808',
+        'MDPI': 'https://openalex.org/P4310320561',
+        'PLOS': 'https://openalex.org/P4310315706',
+        'Oxford': 'https://openalex.org/P4310311648'
+    }
+
+    def extract_keywords(text):
+        text = re.sub(r'[^\w\s]', ' ', text.lower())
+        words = text.split()
+        words = [w for w in words if len(w) > 4 and w not in STOP_WORDS]
+        frequencies = {}
+        for w in words:
+            frequencies[w] = frequencies.get(w, 0) + 1
+        sorted_words = sorted(frequencies.keys(), key=lambda x: frequencies[x], reverse=True)
+        return sorted_words[:4]
+
+    def normalize_publisher(name):
+        n = str(name).lower()
+        if 'elsevier' in n or 'pergamon' in n: return 'Elsevier'
+        if 'springer' in n or 'nature' in n: return 'Springer Nature'
+        if 'wiley' in n: return 'Wiley'
+        if 'taylor' in n or 'informa' in n: return 'Taylor & Francis'
+        if 'ieee' in n: return 'IEEE'
+        if 'mdpi' in n: return 'MDPI'
+        return name
+
+    # -----------------------------------------------------
+    # ARAYÜZ TASARIMI
+    # -----------------------------------------------------
+    st.title("📖 Journal Finder Pro")
+    st.markdown("Yapay zeka ve OpenAlex veritabanı destekli dergi analiz ve bulma modülü.")
+    st.markdown("---")
+
+    col1, col2 = st.columns([1, 2], gap="large")
+
+    with col1:
+        st.subheader("🔍 Makale Bilgileri")
+        abstract = st.text_area("Özet (Abstract) *", height=200, placeholder="Makalenizin İngilizce özetini buraya yapıştırın...")
+        keywords = st.text_input("Anahtar Kelimeler (İsteğe Bağlı)", placeholder="Örn: hydrogen storage, metal alloys, dft (Virgülle ayırın)")
+        
+        pre_selected_pubs = st.multiselect("Hedef Yayınevleri (Ön Seçim)", list(PUBLISHER_IDS.keys()), help="Seçim yapmazsanız tüm yayınevleri taranır.")
+        include_tr_dizin = st.checkbox("🇹🇷 TR-Dizin & Türkiye Dergilerini Dahil Et")
+        
+        search_button = st.button("Dergileri Bul", type="primary", use_container_width=True)
+
+    with col2:
+        if search_button:
+            if not abstract.strip() and not keywords.strip():
+                st.error("Lütfen bir özet metni veya anahtar kelime girin.")
+            else:
+                with st.spinner("Küresel veritabanları taranıyor ve metrikler hesaplanıyor..."):
+                    # Anahtar kelime tespiti
+                    if keywords.strip():
+                        search_terms = [k.strip() for k in keywords.split(',') if len(k) > 2][:4]
+                    else:
+                        search_terms = extract_keywords(abstract)
+                    
+                    if not search_terms:
+                        st.error("Arama yapmak için yeterli anlamlı kelime bulunamadı.")
+                    else:
+                        st.info(f"Tarama için kullanılan terimler: **{', '.join(search_terms)}**")
+                        search_query = " ".join(search_terms)
+                        
+                        try:
+                            # 1. OpenAlex Works API'si üzerinden grubu çekme
+                            works_url = f"https://api.openalex.org/works?search={requests.utils.quote(search_query)}&group_by=primary_location.source.id&per-page=15"
+                            res = requests.get(works_url)
+                            res.raise_for_status()
+                            works_data = res.json()
+                            
+                            top_sources = []
+                            if "group_by" in works_data and works_data["group_by"]:
+                                source_ids = [g["key"].split('/')[-1] for g in works_data["group_by"] if g.get("key")]
+                                
+                                # 2. Dergi ID'leri ile detaylı bilgileri çekme
+                                sources_url = f"https://api.openalex.org/sources?filter=openalex:{'|'.join(source_ids)}"
+                                sources_res = requests.get(sources_url)
+                                sources_res.raise_for_status()
+                                top_sources = sources_res.json().get("results", [])
+                            
+                            if not top_sources:
+                                st.warning("Bu konulara uygun dergi bulunamadı. Lütfen kelimeleri genişletin.")
+                            else:
+                                st.success(f"{len(top_sources)} adet en uygun dergi bulundu!")
+                                
+                                # Sonuçları render etme
+                                for item in top_sources:
+                                    host_name = item.get('host_organization_name', 'Bağımsız / Üniversite')
+                                    pub_name = normalize_publisher(host_name)
+                                    h_index = item.get('summary_stats', {}).get('h_index', 0)
+                                    citedness = item.get('summary_stats', {}).get('2yr_mean_citedness', 0)
+                                    impact_factor = round(citedness, 2)
+                                    is_oa = item.get('is_oa', False)
+                                    apc = item.get('apc_usd', 0)
+                                    
+                                    # Basit Q değeri mantığı
+                                    q_val = "Q1" if impact_factor >= 4.0 or h_index > 70 else ("Q2" if impact_factor >= 2.0 else "Q3/Q4")
+                                    
+                                    with st.container(border=True):
+                                        c_title, c_q = st.columns([4, 1])
+                                        c_title.markdown(f"#### {item.get('display_name', 'Bilinmeyen Dergi')}")
+                                        c_q.markdown(f"**{q_val}**")
+                                        
+                                        st.markdown(f"*{pub_name}*")
+                                        
+                                        m1, m2, m3, m4 = st.columns(4)
+                                        m1.metric("Impact Factor", impact_factor)
+                                        m2.metric("H-Index", h_index)
+                                        m3.metric("Erişim Türü", "Açık Erişim (OA)" if is_oa else "Abonelik")
+                                        m4.metric("Yayın Ücreti", f"${apc}" if apc > 0 else "Ücretsiz")
+                                        
+                                        if item.get('homepage_url'):
+                                            st.markdown(f"[🔗 Dergi Web Sayfasına Git]({item.get('homepage_url')})")
+
+                        except Exception as e:
+                            st.error(f"Veritabanına bağlanırken bir hata oluştu: {str(e)}")
+        else:
+            st.info("👈 Aramaya başlamak için sol taraftaki panele makale bilgilerinizi girin.")
+
+# ... Sonraki elif blokların ...
