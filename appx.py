@@ -228,7 +228,7 @@ menuler = {
         "🥞 2D RP Hidrit Bulucu",
         "🧪 Stokiyometri ve Katkılama Analizi",
         "⚡ Spin-Polarize Bant Yapısı",
-        "📖 Dergi Bulucu": 
+        "📖 Dergi Bulucu"
     ]
 }
 
