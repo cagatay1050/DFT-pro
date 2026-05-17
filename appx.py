@@ -8254,7 +8254,7 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
 
 # ... Önceki elif blokların ...
 
-elif secili_modul == "📖 Dergi Bulucu (Journal Finder Pro)":
+elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
     
     # -----------------------------------------------------
     # JOURNAL FINDER PRO - LOKAL FONKSİYONLAR VE SABİTLER
