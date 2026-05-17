@@ -8246,13 +8246,9 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             
             st.pyplot(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
-# ==========================================
-# MENÜ SEÇİMİ (Senin kodunda zaten benzer bir yapı vardır)
-# ==========================================
-# secili_kategori = st.sidebar.selectbox("Kategori Seçin", list(menuler.keys()))
-# secili_modul = st.sidebar.radio("Modül", menuler[secili_kategori])
-
-# ... Önceki elif blokların ...
+####################Dergi Bulucu###############################
+#
+##############################################################3            
 
 elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
     
@@ -8269,25 +8265,21 @@ elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
     }
 
     def extract_keywords(text):
-        # Sadece harf ve sayıları bırak
         text_clean = re.sub(r'[^\w\s]', ' ', text.lower())
         words = text_clean.split()
         
-        # Genişletilmiş Akademik Stop Words (Jenerik kelimeleri engeller)
+        # Genişletilmiş Akademik Stop Words (Arama kalitesini düşüren jenerik kelimeler)
         stop_words = {
-            'the', 'is', 'in', 'and', 'to', 'of', 'a', 'for', 'with', 'on', 'this', 'that', 'by', 'as', 'an', 'we', 'are', 'from', 'it', 'be', 'has', 'have', 'was', 'were', 'or', 'which', 'their', 'can', 'not', 'at', 'but', 'all', 'such', 'more', 'they', 'our', 'its', 'about', 'out', 'when', 'what', 'where', 'how', 'who', 'any', 'many', 'much', 'other', 'another', 'same', 'first', 'second', 'third', 'after', 'before', 'during', 'over', 'under', 'through', 'while', 'because', 'since', 'until', 'very', 'high', 'low', 'large', 'small', 'higher', 'lower', 'larger', 'smaller', 'time', 'number', 'value', 'values', 'level', 'levels', 'between', 'among', 'within', 'however', 'although', 'further', 'moreover', 'addition', 'studies', 'papers', 'articles', 'methods', 'models', 'systems', 'applications', 'approaches', 'techniques', 'framework', 'experiment', 'experiments', 'experimental', 'parameters', 'parameter', 'features', 'feature', 'conditions', 'condition', 'effects', 'study', 'research', 'paper', 'article', 'results', 'using', 'based', 'used', 'method', 'proposed', 'analysis', 'data', 'model', 'approach', 'performance', 'evaluation', 'effect', 'impact', 'significant', 'increase', 'decrease', 'evaluate', 'compare', 'comparison', 'important', 'application', 'system', 'different', 'provide', 'present', 'review', 'literature', 'state', 'art', 'showed', 'demonstrated', 'found', 'observed', 'investigated', 'developed', 'obtained', 'also', 'two', 'three', 'one', 'new', 'these', 'those', 'than', 'into', 'only', 'well', 'both', 'some', 'could', 'would', 'may', 'might', 'temperature', 'concentration', 'structure', 'properties', 'samples', 'materials', 'compared', 'presence'
+            'the', 'is', 'in', 'and', 'to', 'of', 'a', 'for', 'with', 'on', 'this', 'that', 'by', 'as', 'an', 'we', 'are', 'from', 'it', 'be', 'has', 'have', 'was', 'were', 'or', 'which', 'their', 'can', 'not', 'at', 'but', 'all', 'such', 'more', 'they', 'our', 'its', 'about', 'out', 'when', 'what', 'where', 'how', 'who', 'any', 'many', 'much', 'other', 'another', 'same', 'first', 'second', 'third', 'after', 'before', 'during', 'over', 'under', 'through', 'while', 'because', 'since', 'until', 'very', 'high', 'low', 'large', 'small', 'higher', 'lower', 'larger', 'smaller', 'time', 'number', 'value', 'values', 'level', 'levels', 'between', 'among', 'within', 'however', 'although', 'further', 'moreover', 'addition', 'studies', 'papers', 'articles', 'methods', 'models', 'systems', 'applications', 'approaches', 'techniques', 'framework', 'experiment', 'experiments', 'experimental', 'parameters', 'parameter', 'features', 'feature', 'conditions', 'condition', 'effects', 'study', 'research', 'paper', 'article', 'results', 'using', 'based', 'used', 'method', 'proposed', 'analysis', 'data', 'model', 'approach', 'performance', 'evaluation', 'effect', 'impact', 'significant', 'increase', 'decrease', 'evaluate', 'compare', 'comparison', 'important', 'application', 'system', 'different', 'provide', 'present', 'review', 'literature', 'state', 'art', 'showed', 'demonstrated', 'found', 'observed', 'investigated', 'developed', 'obtained', 'also', 'two', 'three', 'one', 'new', 'these', 'those', 'than', 'into', 'only', 'well', 'both', 'some', 'could', 'would', 'may', 'might', 'temperature', 'concentration', 'structure', 'properties', 'samples', 'materials', 'compared', 'presence', 'investigation', 'calculated', 'calculated', 'simulated', 'mechanism', 'mechanisms'
         }
         
-        # Sadece anlamlı ve 4 harften uzun kelimeleri filtrele
         words = [w for w in words if len(w) > 4 and w not in stop_words]
-        
-        # Frekans sayımı
         frequencies = {}
         for w in words:
             frequencies[w] = frequencies.get(w, 0) + 1
             
-        # Çok fazla kelime API'yi kilitler, en spesifik 3 kelimeyi alıyoruz
-        return sorted(frequencies.keys(), key=lambda x: frequencies[x], reverse=True)[:3]
+        # En baskın 4 kelimeyi alıyoruz
+        return sorted(frequencies.keys(), key=lambda x: frequencies[x], reverse=True)[:4]
 
     # --- 2. ARAYÜZ TASARIMI ---
     st.title("📖 Journal Finder Pro")
@@ -8299,10 +8291,15 @@ elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
     with col1:
         st.subheader("🔍 Makale Bilgileri")
         abstract = st.text_area("Özet (Abstract) *", height=200, placeholder="Makalenizin İngilizce özetini buraya yapıştırın...")
-        keywords = st.text_input("Anahtar Kelimeler (İsteğe Bağlı)", placeholder="Örn: machine learning, alloys (Virgülle ayırın)")
+        keywords = st.text_input("Anahtar Kelimeler (İsteğe Bağlı)", placeholder="Örn: hydrogen storage, perovskite, dft (Virgülle ayırın)")
         
         pre_selected_pubs = st.multiselect("Hedef Yayınevleri", list(PUBLISHER_IDS.keys()), help="Boş bırakırsanız tüm dünyadaki yayınevleri taranır.")
-        include_tr_dizin = st.checkbox("🇹🇷 TR-Dizin & Türkiye Dergilerini Ayrıca Tarat")
+        include_tr_dizin = st.checkbox("🇹🇷 TR-Dizin & Türkiye Dergilerini Dahil Et")
+        
+        st.markdown("---")
+        st.markdown("📊 **Gelişmiş Arama Filtreleri**")
+        min_if_filter = st.slider("Minimum Impact Factor (Etki Faktörü)", 0.0, 10.0, 0.0, 0.5)
+        oa_only_filter = st.checkbox("Sadece Açık Erişim (Open Access) Dergileri Göster", value=False)
         
         search_button = st.button("Dergileri Bul", type="primary", use_container_width=True)
 
@@ -8311,31 +8308,31 @@ elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
             if not abstract.strip() and not keywords.strip():
                 st.error("Lütfen bir özet metni veya anahtar kelime girin.")
             else:
-                with st.spinner("OpenAlex Küresel Veritabanı Taranıyor... Lütfen bekleyin..."):
+                with st.spinner("Küresel veritabanı taranıyor ve metrikler analiz ediliyor..."):
                     
                     # Kelime Belirleme
                     if keywords.strip():
-                        search_terms = [k.strip() for k in keywords.split(',') if len(k) > 2][:3]
+                        search_terms = [k.strip() for k in keywords.split(',') if len(k) > 1][:4]
                     else:
                         search_terms = extract_keywords(abstract)
                     
                     if not search_terms:
-                        st.warning("Özetinizden arama yapmak için yeterli akademik kelime bulunamadı. Lütfen daha detaylı bir özet girin veya Anahtar Kelimeler kutusunu doldurun.")
+                        st.warning("Özetinizden anlamlı kelimeler çıkarılamadı. Lütfen manuel anahtar kelimeler girin.")
                     else:
-                        st.success(f"🔎 Yapay Zeka Tarafından Çıkarılan Odak Kelimeler: **{', '.join(search_terms)}**")
-                        search_query = " ".join(search_terms)
+                        # DAHA ÇOK DERGİ BULMAK İÇİN: Kelimeleri "OR" (Veya) mantığıyla bağlayıp aratıyoruz
+                        search_query = " OR ".join([f'"{term}"' for term in search_terms])
+                        st.success(f"🔎 Analiz Edilen Konu Odakları: {', '.join([f'**{t}**' for t in search_terms])}")
                         
                         try:
-                            source_ids = set() # Benzersiz dergi ID'lerini tutacağımız küme
+                            source_ids = set()
                             
                             # ---- SORGULAMA 1: KÜRESEL VEYA YAYINEVİ FİLTRELİ ----
                             q1_filter = ""
                             if pre_selected_pubs:
-                                # Seçili yayınevlerinin ID kodlarını birleştir (Örn: P4310320990|P4310319965)
                                 pub_ids = [PUBLISHER_IDS[p].split('/')[-1] for p in pre_selected_pubs]
                                 q1_filter = f"&filter=primary_location.source.host_organization:{'|'.join(pub_ids)}"
 
-                            url_global = f"https://api.openalex.org/works?search={requests.utils.quote(search_query)}{q1_filter}&group_by=primary_location.source.id&per-page=15"
+                            url_global = f"https://api.openalex.org/works?search={requests.utils.quote(search_query)}{q1_filter}&group_by=primary_location.source.id&per-page=40"
                             res_global = requests.get(url_global, timeout=15).json()
                             
                             if "group_by" in res_global and res_global["group_by"]:
@@ -8343,9 +8340,9 @@ elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
                                     if g.get("key"):
                                         source_ids.add(g["key"].split('/')[-1])
                             
-                            # ---- SORGULAMA 2: TR-DİZİN (Eğer işaretlendiyse ek bir arama yapar) ----
+                            # ---- SORGULAMA 2: TR-DİZİN DERİN TARAMA ----
                             if include_tr_dizin:
-                                url_tr = f"https://api.openalex.org/works?search={requests.utils.quote(search_query)}&filter=primary_location.source.country_code:tr&group_by=primary_location.source.id&per-page=10"
+                                url_tr = f"https://api.openalex.org/works?search={requests.utils.quote(search_query)}&filter=primary_location.source.country_code:tr&group_by=primary_location.source.id&per-page=20"
                                 res_tr = requests.get(url_tr, timeout=15).json()
                                 if "group_by" in res_tr and res_tr["group_by"]:
                                     for g in res_tr["group_by"]:
@@ -8354,75 +8351,96 @@ elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
 
                             # ---- SONUÇLARI KONTROL ET VE DETAYLARI ÇEK ----
                             if not source_ids:
-                                st.warning("Bu konulara özel bir dergi eşleşmesi bulunamadı. Lütfen sol taraftaki 'Anahtar Kelimeler' kutusuna daha genel İngilizce kelimeler yazarak tekrar deneyin.")
+                                st.warning("Eşleşen dergi bulunamadı. Lütfen anahtar kelimelerinizi daha genel akademik terimlerle değiştirin.")
                             else:
-                                # Toplanan ID'lerin detaylı verisini çek
-                                sources_url = f"https://api.openalex.org/sources?filter=openalex:{'|'.join(list(source_ids))}&per-page=25"
+                                # Maksimum 50 ID'yi tek seferde sorgula (API limiti koruması)
+                                id_list = list(source_ids)[:50]
+                                sources_url = f"https://api.openalex.org/sources?filter=openalex:{'|'.join(id_list)}&per-page=50"
                                 s_res = requests.get(sources_url, timeout=15).json()
                                 sources_data = s_res.get("results", [])
 
                                 if not sources_data:
-                                    st.warning("Dergilerin detay bilgilerine ulaşılamadı.")
+                                    st.warning("Bulunan dergilerin metrik detayları sunucudan çekilemedi.")
                                 else:
-                                    st.markdown(f"### 🏆 {len(sources_data)} Uygun Dergi Bulundu")
-                                    
-                                    # Yüksek Impact Factor'a göre sırala (Güvenli Sıralama)
-                                    sources_data.sort(
-                                        key=lambda x: (x.get('summary_stats') or {}).get('2yr_mean_citedness', 0), 
-                                        reverse=True
-                                    )
-
+                                    # FİLTRELEME VE GÜVENLİ VERİ ANALİZİ
+                                    filtered_journals = []
                                     for item in sources_data:
-                                        title = item.get('display_name', 'Bilinmeyen Dergi')
-                                        publisher = item.get('host_organization_name', 'Bilinmeyen Yayınevi / Üniversite')
-                                        
-                                        # Güvenli Veri Çekimi (NoneType Hatasını Önler)
                                         stats = item.get('summary_stats') or {}
-                                        h_index = stats.get('h_index', 0)
-                                        citedness = stats.get('2yr_mean_citedness', 0)
-                                        impact_factor = round(citedness, 2) if citedness else 0
                                         
-                                        is_oa = item.get('is_oa', False)
-                                        apc = item.get('apc_usd', 0)
-                                        url_link = item.get('homepage_url', '')
-                                        is_tr = item.get('country_code', '') == 'TR'
-
-                                        # Dinamik Q Değeri Ataması
-                                        if is_tr:
-                                            q_val = "TR-Dizin"
-                                        elif impact_factor >= 4.0 or h_index > 70:
-                                            q_val = "Q1"
-                                        elif impact_factor >= 2.0 or h_index > 35:
-                                            q_val = "Q2"
-                                        elif impact_factor >= 1.0 or h_index > 15:
-                                            q_val = "Q3"
-                                        else:
-                                            q_val = "Q4 / ESCI"
-
-                                        # ---- DERGİ KARTI GÖRÜNÜMÜ ----
-                                        with st.container(border=True):
-                                            c_title, c_q = st.columns([4, 1])
-                                            c_title.markdown(f"#### {title}")
-                                            c_q.markdown(f"<div style='text-align: right;'><b>🏅 {q_val}</b></div>", unsafe_allow_html=True)
+                                        # KRİTİK GÜVENLİK ADIMI: NoneType kontrolleri sıfıra (0) veya varsayılana çekiliyor
+                                        h_index = stats.get('h_index')
+                                        h_index = int(h_index) if h_index is not None else 0
+                                        
+                                        citedness = stats.get('2yr_mean_citedness')
+                                        impact_factor = round(float(citedness), 2) if citedness is not None else 0.0
+                                        
+                                        is_oa = bool(item.get('is_oa', False))
+                                        apc = item.get('apc_usd')
+                                        apc = int(apc) if apc is not None else 0
+                                        
+                                        # Eksen/Arayüz Filtre Uygulamaları
+                                        if impact_factor < min_if_filter:
+                                            continue
+                                        if oa_only_filter and not is_oa:
+                                            continue
                                             
-                                            # Yayınevi ve Bayrak
+                                        filtered_journals.append({
+                                            'title': item.get('display_name', 'Bilinmeyen Dergi'),
+                                            'publisher': item.get('host_organization_name', 'Bilinmeyen Yayınevi / Kurum'),
+                                            'h_index': h_index,
+                                            'impact_factor': impact_factor,
+                                            'is_oa': is_oa,
+                                            'apc': apc,
+                                            'url': item.get('homepage_url', ''),
+                                            'country': str(item.get('country_code', '')).upper()
+                                        })
+
+                                    # Sıralama: Impact Factor değerine göre en yüksekten en düşüğe
+                                    filtered_journals.sort(key=lambda x: x['impact_factor'], reverse=True)
+
+                                    if not filtered_journals:
+                                        st.warning("Belirlediğiniz 'Minimum Impact Factor' veya 'Sadece Açık Erişim' kriterlerine uyan dergi kalmadı.")
+                                    else:
+                                        st.markdown(f"### 🏆 {len(filtered_journals)} En Uygun Akademik Dergi Listeleniyor")
+                                        
+                                        for jr in filtered_journals:
+                                            # Güvenli Q-Quartile Sınıflandırması (None hatası vermez)
+                                            is_tr = jr['country'] == 'TR'
+                                            
                                             if is_tr:
-                                                st.markdown(f"🏢 **{publisher}** &nbsp; | &nbsp; 🇹🇷 Türkiye")
+                                                q_val = "TR-Dizin"
+                                            elif jr['impact_factor'] >= 4.0 or jr['h_index'] > 70:
+                                                q_val = "Q1"
+                                            elif jr['impact_factor'] >= 2.0 or jr['h_index'] > 35:
+                                                q_val = "Q2"
+                                            elif jr['impact_factor'] >= 1.0 or jr['h_index'] > 15:
+                                                q_val = "Q3"
                                             else:
-                                                st.markdown(f"🏢 **{publisher}**")
-                                            
-                                            m1, m2, m3, m4 = st.columns(4)
-                                            m1.metric("Impact Factor", impact_factor if impact_factor > 0 else "N/A")
-                                            m2.metric("H-Index", h_index)
-                                            m3.metric("Yayın Türü", "🔓 Açık Erişim" if is_oa else "🔒 Abonelik (Hibrit)")
-                                            m4.metric("Ücret (APC)", f"${apc}" if apc > 0 else "Ücretsiz")
-                                            
-                                            if url_link:
-                                                st.markdown(f"[🔗 Derginin Web Sayfasına Git]({url_link})")
+                                                q_val = "Q4 / ESCI"
+
+                                            # ---- GÖRSEL KART TASARIMI ----
+                                            with st.container(border=True):
+                                                c_title, c_q = st.columns([4, 1])
+                                                c_title.markdown(f"#### {jr['title']}")
+                                                c_q.markdown(f"<div style='text-align: right; color: #1E3A8A;'><b>🏅 {q_val}</b></div>", unsafe_allow_html=True)
+                                                
+                                                if is_tr:
+                                                    st.markdown(f"🏢 **Yayınevi:** {jr['publisher']} &nbsp;|&nbsp; 🇹🇷 Türkiye Tabanlı")
+                                                else:
+                                                    st.markdown(f"🏢 **Yayınevi:** {jr['publisher']}")
+                                                
+                                                m1, m2, m3, m4 = st.columns(4)
+                                                m1.metric("Impact Factor", jr['impact_factor'] if jr['impact_factor'] > 0 else "N/A")
+                                                m2.metric("H-Index", jr['h_index'])
+                                                m3.metric("Erişim Koşulu", "🔓 Açık Erişim" if jr['is_oa'] else "🔒 Abonelik / Hibrit")
+                                                m4.metric("Makale Ücreti", f"${jr['apc']}" if jr['apc'] > 0 else "Ücretsiz / Belirtilmemiş")
+                                                
+                                                if jr['url']:
+                                                    st.markdown(f"[🔗 Dergi Resmi Sayfasına Git (Homepage)]({jr['url']})")
 
                         except requests.exceptions.Timeout:
-                            st.error("⏳ OpenAlex sunucusu çok yavaş yanıt veriyor (Zaman aşımı). Lütfen 1 dakika sonra tekrar deneyin.")
+                            st.error("⏳ OpenAlex sunucu yanıt zaman aşımına uğradı. Lütfen kısa süre sonra butona tekrar basmayı deneyin.")
                         except Exception as e:
-                            st.error(f"🚨 Beklenmeyen bir hata oluştu: {str(e)}")
+                            st.error(f"🚨 Analiz Motorunda Teknik Hata Oluştu: {str(e)}")
         else:
-            st.info("👈 Dergileri bulmak için sol panele abstract yapıştırın veya anahtar kelime girip butona tıklayın.")
+            st.info("👈 Sol taraftaki alana makale özetini girip 'Dergileri Bul' butonuna tıklayarak küresel taramayı başlatabilirsiniz.")
