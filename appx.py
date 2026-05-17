@@ -8349,5 +8349,3 @@ with col2:
                         st.error(f"Bir hata oluştu: {str(e)}")
     else:
         st.info("👈 Aramaya başlamak için sol taraftaki paneli kullanın.")
-=======
->>>>>>> 380537c32052eafa932c126c2af8e9248472c618
