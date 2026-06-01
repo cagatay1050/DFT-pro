@@ -6048,6 +6048,8 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
 # ==========================================
 # MODÜL 33: FONON BAND YAPISI ÇİZİMİ
 # ==========================================
+
+# NOT: Bu kod bloğu mevcut 'if/elif' yapınızın içine doğrudan yapıştırılabilir.
 elif secim == "🎶 Fonon Band Yapısı":
     st.header("Fonon Band Yapısı Çizimi (Origin Stili)")
     st.markdown("Phonopy veya VASP'tan elde ettiğiniz fonon band verisini yükleyin. K-noktalarını belirleyip yüksek çözünürlüklü makale grafiğinizi saniyeler içinde oluşturun.")
@@ -6075,7 +6077,7 @@ elif secim == "🎶 Fonon Band Yapısı":
                 # Rakamlar aynı satırdaysa
                 if len(parts) > 1 and parts[1].strip() != "":
                     raw_end_points = [float(x) for x in parts[1].split()]
-                # Rakamlar bir alt satırdaysa (Sizin verinizdeki durum)
+                # Rakamlar bir alt satırdaysa
                 elif i + 1 < len(content):
                     next_line = content[i+1].strip()
                     if next_line.startswith("#"):
@@ -6117,16 +6119,16 @@ elif secim == "🎶 Fonon Band Yapısı":
         else:
             # --- 3. K-PATH ETİKETLERİ ---
             st.markdown("### 3. K-Noktası Etiketleri")
-            st.markdown("Gamma noktası için sadece **G** veya **Gamma** yazmanız yeterlidir. Ekrana $\Gamma$ olarak basılacaktır.")
+            st.markdown("Gamma noktası için sadece **G** veya **Gamma** yazmanız yeterlidir. Ekrana kalın punto **$\\mathbf{\\Gamma}$** olarak basılacaktır.")
             
             k_labels = []
-            # Kullanıcının girdiği veya dosyadan okunan koordinat sayısı kadar kutu açılır
             cols_k = st.columns(len(end_points))
             for i, val in enumerate(end_points):
                 with cols_k[i]:
                     user_label = st.text_input(f"{val:.3f}", value=f"P{i+1}", key=f"k_lbl_{i}")
                     if user_label.upper() == "G" or user_label.upper() == "GAMMA":
-                        k_labels.append(r"$\Gamma$")
+                        # Kalın ve belirgin Gamma için matematiksel formatlama
+                        k_labels.append(r"$\mathbf{\Gamma}$")
                     else:
                         k_labels.append(user_label)
 
@@ -6142,7 +6144,7 @@ elif secim == "🎶 Fonon Band Yapısı":
                     p_y_min = st.number_input("Min Frekans (THz)", value=-2.0, step=1.0)
                     p_y_max = st.number_input("Maks Frekans (THz)", value=float(np.ceil(max([max(y) for x, y in branches])))+2.0, step=1.0)
                     p_y_step = st.number_input("Y Ekseni Adımı", value=10.0, step=5.0)
-                    st.markdown("**Grafik Boyutları**") # EKLENDİ
+                    st.markdown("**Grafik Boyutları**")
                     p_fig_width = st.slider("Grafik Genişliği", min_value=3, max_value=20, value=6, step=1)
                     p_fig_height = st.slider("Grafik Yüksekliği", min_value=3, max_value=20, value=8, step=1)
                 
@@ -6150,29 +6152,58 @@ elif secim == "🎶 Fonon Band Yapısı":
                     st.markdown("**Çizgi Stili**")
                     p_line_color = st.color_picker("Band Rengi", value="#0000FF") 
                     p_line_width = st.number_input("Çizgi Kalınlığı", value=2.0, step=0.5)
-                    st.markdown("**Kararlılık (y=0) Çizgisi**") # EKLENDİ
+                    st.markdown("**Kararlılık (y=0) Çizgisi**")
                     p_hline = st.checkbox("y=0 Çizgisini Göster", value=True)
                     p_hline_color = st.color_picker("0 Çizgisi Rengi", value="#000000")
                     p_hline_style = st.selectbox("0 Çizgisi Türü", options=["-", "--", "-.", ":"], index=0, help="'-' (Düz), '--' (Kesik), '-.' (Noktalı Kesik), ':' (Noktalı)")
                 
                 with c3:
                     st.markdown("**Tipografi ve Çıktı**")
-                    p_font_label = st.slider("Eksen Başlıkları (Punto)", 14, 28, 22)
-                    p_font_tick = st.slider("Eksen Rakamları (Punto)", 12, 24, 18)
+                    # Alt limitler 8 puntoya düşürüldü
+                    p_font_label = st.slider("Eksen Başlıkları (Punto)", 8, 28, 22)
+                    p_font_tick = st.slider("Eksen Rakamları (Punto)", 8, 24, 18)
                     p_dpi = st.selectbox("İndirme Çözünürlüğü (DPI)", [300, 600, 1000, 1200], index=1)
+
+                # --- YENİ: GRAFİK İÇİ METİN KUTUSU (LEGEND) AYARLARI ---
+                st.markdown("---")
+                st.markdown("**Grafik İçi Metin Kutusu Ayarları**")
+                text_col1, text_col2, text_col3 = st.columns([1, 2, 2])
+                
+                with text_col1:
+                    show_text_box = st.checkbox("Metin Kutusu Ekle", value=False)
+                
+                with text_col2:
+                    text_content = st.text_input(
+                        "Kutu İçeriği (Alt/Üst indis için _ ve ^ kullanın):", 
+                        value=r"TiO_2 \text{ Anatase}", 
+                        disabled=not show_text_box,
+                        help="Örnek: Metin_alt veya Metin^ust. Matematiksel ifadeler LaTeX standardındadır."
+                    )
+                
+                with text_col3:
+                    text_position = st.selectbox(
+                        "Kutu Konumu:",
+                        options=[
+                            "upper right", "upper left", "lower left", "lower right", 
+                            "right", "center left", "center right", "lower center", "upper center", "center"
+                        ],
+                        index=0,
+                        format_func=lambda x: x.replace("upper", "Üst").replace("lower", "Alt").replace("right", "Sağ").replace("left", "Sol").replace("center", "Orta"),
+                        disabled=not show_text_box
+                    )
 
             # --- 5. ÇİZİM İŞLEMİ ---
             if st.button("🚀 Grafiği Çiz ve Hazırla", type="primary", use_container_width=True):
-                # TİMES NEW ROMAN AYARI EKLENDİ
+                # TIMES NEW ROMAN AYARI
                 plt.rcParams['font.family'] = 'Times New Roman'
-                
-                # GRAFİK BOYUTLARI DİNAMİK YAPILDI
+                plt.rcParams['mathtext.fontset'] = 'stix' # LaTeX yazılarının Times stilinde olması için
+
                 fig, ax = plt.subplots(figsize=(p_fig_width, p_fig_height)) 
 
                 for x_vals, y_vals in branches:
                     ax.plot(x_vals, y_vals, color=p_line_color, linewidth=p_line_width, alpha=0.9)
 
-                # y=0 ÇİZGİSİ DİNAMİK YAPILDI
+                # y=0 ÇİZGİSİ
                 if p_hline:
                     ax.axhline(0, color=p_hline_color, linestyle=p_hline_style, linewidth=1.2, zorder=0)
 
@@ -6197,6 +6228,13 @@ elif secim == "🎶 Fonon Band Yapısı":
                     label.set_fontweight('bold')
                 for spine in ax.spines.values():
                     spine.set_linewidth(2.0)
+
+                # DİNAMİK METİN KUTUSU EKLEME (PUNTO 12)
+                if show_text_box and text_content.strip() != "":
+                    # Gelişmiş indis desteği için girdiyi otomatik matematik moduna ($...$) alıyoruz
+                    formatted_text = f"${text_content}$"
+                    # Origin stili çerçeveli beyaz kutu görünümü oluşturur
+                    ax.legend([formatted_text], loc=text_position, fontsize=12, handlelength=0, handletextpad=0, fancybox=False, edgecolor='black').get_frame().set_linewidth(1.0)
 
                 plt.tight_layout()
                 st.pyplot(fig)
