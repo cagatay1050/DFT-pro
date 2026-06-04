@@ -8253,3 +8253,217 @@ elif secim == "📖 Dergi Bulucu (Journal Finder Pro)":
                             st.error(f"🚨 Analiz Motorunda Teknik Hata Oluştu: {str(e)}")
         else:
             st.info("👈 Sol taraftaki alana makale özetini girip 'Dergileri Bul' butonuna tıklayarak küresel taramayı başlatabilirsiniz.")
+elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
+    st.header("📊 Elektronik Yoğunluk Durumları (DOS & PDOS)")
+    st.markdown("Vaspkit'ten elde ettiğiniz `TDOS.dat` ve `PDOS.dat` dosyalarını yükleyerek makale kalitesinde Total ve Partial DOS grafiklerini oluşturun.")
+    st.markdown("---")
+
+    # --- 1. KULLANICI ARAYÜZÜ (Veri Girişi) ---
+    is_spin = st.checkbox("Manyetik / Spin-Polarize (ISPIN=2) Hesaplama Mı?", value=False)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        tdos_file = st.file_uploader("1. Total DOS (TDOS.dat) *Zorunlu*", type=["dat", "txt"])
+    with col2:
+        n_pdos = st.number_input("Kaç Adet PDOS (Partial) Çizeceksiniz?", min_value=0, max_value=6, value=2, step=1)
+        
+    st.markdown("---")
+    
+    # --- DİNAMİK PDOS DOSYA SİSTEMİ ---
+    temp_pdos = []
+    if n_pdos > 0:
+        st.markdown("**PDOS (Kısmi DOS) Dosyalarını Yükleyin**")
+        p_cols = st.columns(min(n_pdos, 3))
+        
+        for i in range(n_pdos):
+            col_idx = i % 3
+            with p_cols[col_idx]:
+                p_label = st.text_input(f"{i+1}. Atom/Orbital İsmi", value=f"Orbital-{i+1}", key=f"plbl_{i}")
+                p_file = st.file_uploader(f"Dosya ({p_label})", type=["dat", "txt"], key=f"pfile_{i}")
+                temp_pdos.append({"label": p_label, "file": p_file})
+                
+    st.markdown("---")
+
+    # --- 2. ADIM: VERİ OKUMA ---
+    if st.button("Verileri Oku ve Grafiği Hazırla", type="primary", use_container_width=True):
+        if tdos_file is None:
+            st.error("HATA: Grafiği çizmek için TDOS.dat dosyasını yüklemelisiniz!")
+        else:
+            try:
+                def smart_load(uploaded_file, spin):
+                    uploaded_file.seek(0)
+                    df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', header=None, engine='python')
+                    
+                    if spin and df.shape[1] >= 3:
+                        df_clean = pd.DataFrame({
+                            'E': df[0],
+                            'Up': df[1],
+                            'Dn': -abs(df[2]) # Spin-Down her zaman negatif bölgede
+                        })
+                    else:
+                        df_clean = pd.DataFrame({'E': df[0], 'Up': df[1]})
+                    return df_clean.dropna().reset_index(drop=True)
+
+                tdos_df = smart_load(tdos_file, is_spin)
+                valid_pdos = []
+                for p in temp_pdos:
+                    if p["file"] is not None:
+                        pdf = smart_load(p["file"], is_spin)
+                        valid_pdos.append({"label": p["label"], "df": pdf})
+
+                # Otonom Sınırlar
+                e_min = float(np.floor(tdos_df['E'].min() / 2) * 2)
+                e_max = float(np.ceil(tdos_df['E'].max() / 2) * 2)
+                dos_max = float(np.ceil(tdos_df['Up'].max() * 1.1))
+                dos_min = float(np.floor(tdos_df['Dn'].min() * 1.1)) if is_spin else 0.0
+
+                st.session_state.dos_ready = True
+                st.session_state.dos_is_spin = is_spin
+                st.session_state.dos_tdos = tdos_df
+                st.session_state.dos_pdos = valid_pdos
+                st.session_state.dos_emin = max(e_min, -10.0)
+                st.session_state.dos_emax = min(e_max, 10.0)
+                st.session_state.dos_dmin = dos_min
+                st.session_state.dos_dmax = dos_max
+                
+                st.success("✅ Veriler hafızaya alındı!")
+                
+            except Exception as e:
+                st.error(f"Dosya okuma hatası: {e}")
+
+    # --- 3. ADIM: ÇİZİM VE STÜDYO ---
+    if st.session_state.get("dos_ready", False):
+        tdos_df = st.session_state.dos_tdos
+        pdos_list = st.session_state.dos_pdos
+        is_spin_plot = st.session_state.dos_is_spin
+
+        with st.expander("📐 Eksen, Çizgi ve Görünüm Ayarları", expanded=False):
+            cx1, cx2, cx3 = st.columns(3)
+            p_x_min = cx1.number_input("X Başlangıç (eV)", value=st.session_state.dos_emin)
+            p_x_max = cx2.number_input("X Bitiş (eV)", value=st.session_state.dos_emax)
+            p_x_step = cx3.number_input("X Adımı", value=2.0)
+
+            cy1, cy2, cy3 = st.columns(3)
+            p_y_min = cy1.number_input("Y Başlangıç", value=st.session_state.dos_dmin)
+            p_y_max = cy2.number_input("Y Bitiş", value=st.session_state.dos_dmax)
+            p_y_step = cy3.number_input("Y Adımı", value=float(np.ceil((p_y_max - p_y_min)/6)))
+
+            st.markdown("**Çizgi Kalınlıkları ve Görünüm**")
+            cl1, cl2, cl3 = st.columns(3)
+            p_line_width = cl1.number_input("DOS Çizgi Kalınlığı", value=2.0, min_value=0.5, step=0.5)
+            p_fermi_width = cl2.number_input("Fermi Çizgi Kalınlığı", value=1.5, min_value=0.5, step=0.5)
+            p_tick_dir = cl3.selectbox("Çentik (Tick) Yönü", ["in", "out"], index=0)
+
+            c_fill = st.checkbox("Eğrilerin İçini Boya (Fill)", value=True)
+            t_color = st.color_picker("TDOS Rengi", "#7f8c8d")
+            f_color = st.color_picker("Fermi Çizgisi Rengi", "#e74c3c")
+            
+            # Fermi Etiketi Konumu
+            p_fermi_y_pos = st.slider("E_F Etiketi Dikey Konumu (% Y-Ekseni)", min_value=5, max_value=95, value=90, step=5)
+            
+            panel_label = st.text_input("Panel Etiketi (a, b)", value="")
+            p_leg_loc = st.selectbox("Lejant Konumu", ["best", "upper right", "upper left", "center right", "lower right", "lower left"], index=1)
+
+            # --- GRAFİK İÇİ METİN KUTUSU (CUSTOM ANNOTATION) ---
+            st.markdown("---")
+            st.markdown("**Grafik İçi Özel Metin Kutusu**")
+            text_col1, text_col2, text_col3 = st.columns([1, 2, 2])
+            show_text_box = text_col1.checkbox("Metin Kutusu Ekle", value=False)
+            text_content = text_col2.text_input("Kutu İçeriği (Örn: TiO_2 veya MoS_2)", value="TiO_2", disabled=not show_text_box)
+            text_position = text_col3.selectbox(
+                "Metin Konumu:",
+                options=["upper left", "upper right", "lower left", "lower right", "center"],
+                index=0, # Default sol üst köşe yapıldı
+                format_func=lambda x: x.replace("upper", "Üst").replace("lower", "Alt").replace("right", "Sağ").replace("left", "Sol").replace("center", "Orta"),
+                disabled=not show_text_box
+            )
+
+        # 🎨 ÇİZİM BÖLÜMÜ
+        fig, ax = plt.subplots(figsize=(settings['width'], settings['height']))
+        plt.rcParams['mathtext.fontset'] = 'stix'  # LaTeX indislendirmelerinin estetik durması için
+
+        def plot_dos(df, color, label, lw=2.0, zorder=2, fill=True):
+            # Spin-Up
+            ax.plot(df['E'], df['Up'], color=color, lw=lw, label=label, zorder=zorder)
+            if fill: 
+                ax.fill_between(df['E'], 0, df['Up'], color=color, alpha=0.15, zorder=zorder-1)
+            # Spin-Down
+            if is_spin_plot and 'Dn' in df.columns:
+                ax.plot(df['E'], df['Dn'], color=color, lw=lw, zorder=zorder)
+                if fill: 
+                    ax.fill_between(df['E'], 0, df['Dn'], color=color, alpha=0.15, zorder=zorder-1)
+
+        # 1. TDOS Çizimi
+        plot_dos(tdos_df, t_color, "Total DOS", lw=p_line_width, fill=c_fill)
+
+        # 2. PDOS Çizimi
+        default_colors = ['#3498db', '#e67e22', '#2ecc71', '#9b59b6', '#f1c40f', '#34495e']
+        for i, p in enumerate(pdos_list):
+            p_c = st.color_picker(f"{p['label']} Rengi", default_colors[i % len(default_colors)], key=f"cp_{i}")
+            plot_dos(p['df'], p_c, p['label'], lw=p_line_width, zorder=3+i, fill=c_fill)
+
+        # Fermi Seviyesi (Dikey Kesik Çizgi)
+        ax.axvline(0, color=f_color, ls='--', lw=p_fermi_width, zorder=10)
+        
+        # Fermi Yanına E_F Metni Ekleme (Dinamik Konumlu)
+        fermi_y_coord = p_y_min + (p_y_max - p_y_min) * (p_fermi_y_pos / 100.0)
+        ax.text(0.1, fermi_y_coord, r'$\mathbf{E_F}$', color=f_color, fontweight='bold', va='center', ha='left', zorder=11)
+        
+        if is_spin_plot: 
+            ax.axhline(0, color='black', lw=1.0, alpha=0.5, zorder=1)
+            
+            # Spin Up / Down Belirteçleri (Sağ kenara hizalı)
+            ax.text(0.98, 0.95, r'$\uparrow$', transform=ax.transAxes, color='black', fontsize=14, fontweight='bold', ha='right', va='top')
+            ax.text(0.98, 0.05, r'$\downarrow$', transform=ax.transAxes, color='black', fontsize=14, fontweight='bold', ha='right', va='bottom')
+
+        # Eksen Sınırları ve Başlıkları
+        ax.set_xlim(p_x_min, p_x_max)
+        ax.set_ylim(p_y_min, p_y_max)
+        ax.set_xlabel(r'$\mathbf{Energy\ (E - E_{F})\ (eV)}$', fontweight='bold', labelpad=settings['labelpad'])
+        ax.set_ylabel(r'$\mathbf{Density\ of\ States\ (states/eV)}$', fontweight='bold', labelpad=settings['labelpad'])
+
+        # Tick (Çentik) Ayarları ve Yönü
+        ax.xaxis.set_major_locator(MultipleLocator(p_x_step))
+        ax.yaxis.set_major_locator(MultipleLocator(p_y_step))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        
+        ax.tick_params(axis='both', which='both', direction=p_tick_dir)
+
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontweight('bold')
+
+        # Lejant Ayarı
+        ax.legend(loc=p_leg_loc, frameon=False, prop={'weight': 'bold'})
+        
+        # Dinamik Metin Kutusu (LaTeX Formatında Alt/Üst İndis Tanır)
+        if show_text_box and text_content.strip() != "":
+            # Origin tarzı beyaz arka planlı küçük kutu entegrasyonu
+            formatted_text = f"${text_content}$"
+            ax.text(
+                0.05 if "left" in text_position else (0.95 if "right" in text_position else 0.5),
+                0.93 if "upper" in text_position else (0.07 if "lower" in text_position else 0.5),
+                formatted_text,
+                transform=ax.transAxes,
+                fontsize=12,
+                fontweight='bold',
+                ha='left' if "left" in text_position else ('right' if "right" in text_position else 'center'),
+                va='top' if "upper" in text_position else ('bottom' if "lower" in text_position else 'center'),
+                bbox=dict(facecolor='white', edgecolor='black', boxstyle='square,pad=0.3', lw=0.8)
+            )
+        
+        # Panel Etiketi (Master Panel koordinatlarından)
+        if panel_label.strip():
+            ax.text(settings['text_x'], settings['text_y'], f"({panel_label})", 
+                    transform=ax.transAxes, fontweight='bold', va='top')
+
+        plt.tight_layout()
+        st.pyplot(fig)
+        
+        # İndirme İşlemi
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
+        st.download_button(label="📥 DOS Grafiğini İndir (600 DPI)", 
+                          data=buf.getvalue(), 
+                          file_name="DOS_PDOS_Origin.png", 
+                          mime="image/png")
