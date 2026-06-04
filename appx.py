@@ -8377,7 +8377,16 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
                 format_func=lambda x: x.replace("upper", "Üst").replace("lower", "Alt").replace("right", "Sağ").replace("left", "Sol").replace("center", "Orta"),
                 disabled=not show_text_box
             )
-
+# --- SETTINGS DEĞİŞKENİ KONTROLÜ VE FALLBACK (HATA ÖNLEYİCİ) ---
+        if 'settings' not in locals() and 'settings' not in globals():
+            # Eğer master panelden settings gelmediyse, varsayılan değerleri tanımla
+            settings = {
+                'width': 6,
+                'height': 5,
+                'labelpad': 10,
+                'text_x': 0.05,
+                'text_y': 0.95
+            }
         # 🎨 ÇİZİM BÖLÜMÜ
         fig, ax = plt.subplots(figsize=(settings['width'], settings['height']))
         plt.rcParams['mathtext.fontset'] = 'stix'  # LaTeX indislendirmelerinin estetik durması için
