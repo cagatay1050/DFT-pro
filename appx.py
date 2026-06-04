@@ -8337,7 +8337,7 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         pdos_list = st.session_state.dos_pdos
         is_spin_plot = st.session_state.dos_is_spin
 
-        with st.expander("📐 Eksen, Çizgi ve Görünüm Ayarları", expanded=False):
+        with st.expander("📐 Eksen, Çizgi ve Gelişmiş Tipografi Ayarları", expanded=False):
             cx1, cx2, cx3 = st.columns(3)
             p_x_min = cx1.number_input("X Başlangıç (eV)", value=st.session_state.dos_emin)
             p_x_max = cx2.number_input("X Bitiş (eV)", value=st.session_state.dos_emax)
@@ -8348,7 +8348,20 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
             p_y_max = cy2.number_input("Y Bitiş", value=st.session_state.dos_dmax)
             p_y_step = cy3.number_input("Y Adımı", value=float(np.ceil((p_y_max - p_y_min)/6)))
 
-            st.markdown("**Çizgi Kalınlıkları ve Görünüm**")
+            st.markdown("---")
+            st.markdown("**🖋️ Detaylı Punto ve Boyut Ayarları**")
+            f_col1, f_col2, f_col3 = st.columns(3)
+            p_font_label = f_col1.slider("Eksen Başlık Puntosu", 8, 28, 16)
+            p_font_tick = f_col2.slider("Eksen Rakam (Tick) Puntosu", 8, 24, 14)
+            p_font_legend = f_col3.slider("Lejant (Kutucuk) Puntosu", 6, 20, 12)
+
+            f_col4, f_col5, f_col6 = st.columns(3)
+            p_font_fermi = f_col4.slider("E_F Etiket Puntosu", 8, 24, 14)
+            p_font_spin = f_col5.slider("Spin Okları Puntosu", 10, 26, 16)
+            p_font_custom = f_col6.slider("Özel Metin Kutusu Puntosu", 8, 24, 12)
+
+            st.markdown("---")
+            st.markdown("**📉 Çizgi Kalınlıkları ve Görünüm**")
             cl1, cl2, cl3 = st.columns(3)
             p_line_width = cl1.number_input("DOS Çizgi Kalınlığı", value=2.0, min_value=0.5, step=0.5)
             p_fermi_width = cl2.number_input("Fermi Çizgi Kalınlığı", value=1.5, min_value=0.5, step=0.5)
@@ -8373,30 +8386,26 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
             text_position = text_col3.selectbox(
                 "Metin Konumu:",
                 options=["upper left", "upper right", "lower left", "lower right", "center"],
-                index=0, # Default sol üst köşe yapıldı
+                index=0,
                 format_func=lambda x: x.replace("upper", "Üst").replace("lower", "Alt").replace("right", "Sağ").replace("left", "Sol").replace("center", "Orta"),
                 disabled=not show_text_box
             )
-# --- SETTINGS DEĞİŞKENİ KONTROLÜ VE FALLBACK (HATA ÖNLEYİCİ) ---
-        if 'settings' not in locals() and 'settings' not in globals():
-            # Eğer master panelden settings gelmediyse, varsayılan değerleri tanımla
-            settings = {
-                'width': 6,
-                'height': 5,
-                'labelpad': 10,
-                'text_x': 0.05,
-                'text_y': 0.95
-            }
+
         # 🎨 ÇİZİM BÖLÜMÜ
+        # Master panel kontrolü ve çökme önleyici emniyet kilidi
+        if 'settings' not in locals() and 'settings' not in globals():
+            settings = {
+                'width': 6, 'height': 5, 'labelpad': 12, 'text_x': 0.05, 'text_y': 0.95
+            }
+
         fig, ax = plt.subplots(figsize=(settings['width'], settings['height']))
-        plt.rcParams['mathtext.fontset'] = 'stix'  # LaTeX indislendirmelerinin estetik durması için
+        plt.rcParams['font.family'] = 'Times New Roman'
+        plt.rcParams['mathtext.fontset'] = 'stix'
 
         def plot_dos(df, color, label, lw=2.0, zorder=2, fill=True):
-            # Spin-Up
             ax.plot(df['E'], df['Up'], color=color, lw=lw, label=label, zorder=zorder)
             if fill: 
                 ax.fill_between(df['E'], 0, df['Up'], color=color, alpha=0.15, zorder=zorder-1)
-            # Spin-Down
             if is_spin_plot and 'Dn' in df.columns:
                 ax.plot(df['E'], df['Dn'], color=color, lw=lw, zorder=zorder)
                 if fill: 
@@ -8414,57 +8423,56 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         # Fermi Seviyesi (Dikey Kesik Çizgi)
         ax.axvline(0, color=f_color, ls='--', lw=p_fermi_width, zorder=10)
         
-        # Fermi Yanına E_F Metni Ekleme (Dinamik Konumlu)
+        # Fermi Yanına E_F Metni Ekleme (Kullanıcı puntosu entegre edildi)
         fermi_y_coord = p_y_min + (p_y_max - p_y_min) * (p_fermi_y_pos / 100.0)
-        ax.text(0.1, fermi_y_coord, r'$\mathbf{E_F}$', color=f_color, fontweight='bold', va='center', ha='left', zorder=11)
+        ax.text(0.1, fermi_y_coord, r'$\mathbf{E_F}$', color=f_color, fontsize=p_font_fermi, fontweight='bold', va='center', ha='left', zorder=11)
         
         if is_spin_plot: 
             ax.axhline(0, color='black', lw=1.0, alpha=0.5, zorder=1)
             
-            # Spin Up / Down Belirteçleri (Sağ kenara hizalı)
-            ax.text(0.98, 0.95, r'$\uparrow$', transform=ax.transAxes, color='black', fontsize=14, fontweight='bold', ha='right', va='top')
-            ax.text(0.98, 0.05, r'$\downarrow$', transform=ax.transAxes, color='black', fontsize=14, fontweight='bold', ha='right', va='bottom')
+            # Spin Up / Down Belirteçleri (Kullanıcı puntosu entegre edildi)
+            ax.text(0.98, 0.95, r'$\uparrow$', transform=ax.transAxes, color='black', fontsize=p_font_spin, fontweight='bold', ha='right', va='top')
+            ax.text(0.98, 0.05, r'$\downarrow$', transform=ax.transAxes, color='black', fontsize=p_font_spin, fontweight='bold', ha='right', va='bottom')
 
-        # Eksen Sınırları ve Başlıkları
+        # Eksen Sınırları ve Başlıkları (Kullanıcı puntosu entegre edildi)
         ax.set_xlim(p_x_min, p_x_max)
         ax.set_ylim(p_y_min, p_y_max)
-        ax.set_xlabel(r'$\mathbf{Energy\ (E - E_{F})\ (eV)}$', fontweight='bold', labelpad=settings['labelpad'])
-        ax.set_ylabel(r'$\mathbf{Density\ of\ States\ (states/eV)}$', fontweight='bold', labelpad=settings['labelpad'])
+        ax.set_xlabel(r'$\mathbf{Energy\ (E - E_{F})\ (eV)}$', fontsize=p_font_label, fontweight='bold', labelpad=settings['labelpad'])
+        ax.set_ylabel(r'$\mathbf{Density\ of\ States\ (states/eV)}$', fontsize=p_font_label, fontweight='bold', labelpad=settings['labelpad'])
 
-        # Tick (Çentik) Ayarları ve Yönü
+        # Tick (Çentik) Ayarları ve Yönü (Kullanıcı puntosu entegre edildi)
         ax.xaxis.set_major_locator(MultipleLocator(p_x_step))
         ax.yaxis.set_major_locator(MultipleLocator(p_y_step))
         ax.xaxis.set_minor_locator(AutoMinorLocator(2))
         ax.yaxis.set_minor_locator(AutoMinorLocator(2))
         
-        ax.tick_params(axis='both', which='both', direction=p_tick_dir)
+        ax.tick_params(axis='both', which='both', direction=p_tick_dir, labelsize=p_font_tick)
 
         for label in ax.get_xticklabels() + ax.get_yticklabels():
             label.set_fontweight('bold')
 
-        # Lejant Ayarı
-        ax.legend(loc=p_leg_loc, frameon=False, prop={'weight': 'bold'})
+        # Lejant Ayarı (Kullanıcı puntosu entegre edildi)
+        ax.legend(loc=p_leg_loc, frameon=False, prop={'weight': 'bold', 'size': p_font_legend})
         
-        # Dinamik Metin Kutusu (LaTeX Formatında Alt/Üst İndis Tanır)
+        # Dinamik Metin Kutusu (Kullanıcı puntosu entegre edildi)
         if show_text_box and text_content.strip() != "":
-            # Origin tarzı beyaz arka planlı küçük kutu entegrasyonu
             formatted_text = f"${text_content}$"
             ax.text(
                 0.05 if "left" in text_position else (0.95 if "right" in text_position else 0.5),
                 0.93 if "upper" in text_position else (0.07 if "lower" in text_position else 0.5),
                 formatted_text,
                 transform=ax.transAxes,
-                fontsize=12,
+                fontsize=p_font_custom,
                 fontweight='bold',
                 ha='left' if "left" in text_position else ('right' if "right" in text_position else 'center'),
                 va='top' if "upper" in text_position else ('bottom' if "lower" in text_position else 'center'),
                 bbox=dict(facecolor='white', edgecolor='black', boxstyle='square,pad=0.3', lw=0.8)
             )
         
-        # Panel Etiketi (Master Panel koordinatlarından)
+        # Panel Etiketi (Master Panel koordinatlarından ve eksen puntosundan beslenir)
         if panel_label.strip():
             ax.text(settings['text_x'], settings['text_y'], f"({panel_label})", 
-                    transform=ax.transAxes, fontweight='bold', va='top')
+                    transform=ax.transAxes, fontsize=p_font_label, fontweight='bold', va='top')
 
         plt.tight_layout()
         st.pyplot(fig)
