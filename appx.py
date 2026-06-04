@@ -1961,404 +1961,278 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)":
 # ==========================================
 # MODÜL 10: ELEKTRONİK BANT YAPISI (BAND STRUCTURE) - ORIGIN STYLE
 # ==========================================
-# --- 3. ADIM: ORIGIN KONTROL PANELİ VE DİNAMİK ÇİZİM ---
-    if st.session_state.get("band_ready", False):
-        
-        b_kcoords = st.session_state.band_kcoords
-        b_klabels = st.session_state.band_klabels
-        b_gap = st.session_state.band_gap
-        def_ymin = st.session_state.band_ymin
-        def_ymax = st.session_state.band_ymax
-        is_spin_plot = st.session_state.band_is_spin
-        
-        def_mid_y = (np.max(st.session_state.band_vbm_y) + np.min(st.session_state.band_cbm_y)) / 2
+elif secim == "🌌 Elektronik Bant Yapısı (Band)":
+        st.header("Elektronik Bant Yapısı ve Band Gap Grafiği")
+        st.markdown("Vaspkit çıktıları olan `BAND.dat` (veya `BAND-RE.dat`), `KLABELS` ve `BAND_GAP` dosyalarını yükleyerek yüksek çözünürlüklü bant grafiklerini çizin.")
+        st.markdown("---")
 
-        # 📐 EKSEN VE İNCE AYAR PANELİ
-        with st.expander("📐 Eksen, Estetik ve Özel Metin Ayarları (Anlık Tepki)", expanded=True):
-            st.markdown("**1. Y Ekseni Sınırları (Enerji, eV)**")
-            cy1, cy2, cy3 = st.columns(3)
-            with cy1: p_y_min = st.number_input("Y Min", value=float(def_ymin if def_ymin > -15 else -5.0), step=1.0)
-            with cy2: p_y_max = st.number_input("Y Maks", value=float(def_ymax if def_ymax < 15 else 5.0), step=1.0)
-            with cy3: p_y_step = st.number_input("Y Adımı (Tick)", value=2.0, step=0.5)
+        # --- 1. KULLANICI ARAYÜZÜ (Veri Yükleme) ---
+        is_spin = st.checkbox("Manyetik / Spin-Polarize (ISPIN=2) Hesaplama Mı?", value=False, help="Eğer hesaplamanızda Spin-Up ve Spin-Down bantları ayrıysa bunu işaretleyin. BAND.dat dosyanız 3 sütunlu okunacaktır.")
+        
+        c1, c2, c3 = st.columns(3)
+        with c1: band_file = st.file_uploader("1. BAND.dat Yükle", type=["dat", "txt"])
+        with c2: klabels_file = st.file_uploader("2. KLABELS Yükle")
+        with c3: gap_file = st.file_uploader("3. BAND_GAP Yükle")
 
-            st.markdown("**2. Renkler ve K-Noktası Çizgileri**")
-            cc_all = st.columns(5) if is_spin_plot else st.columns(4)
-            if is_spin_plot:
-                with cc_all[0]: color_up = st.color_picker("Spin UP Rengi", value="#E74C3C")
-                with cc_all[1]: color_dn = st.color_picker("Spin DOWN Rengi", value="#2980B9")
-                with cc_all[2]: fill_color = st.color_picker("Band Gap Boyası", value="#2ecc71")
-                with cc_all[3]: fermi_color = st.color_picker("Fermi Çizgisi", value="#000000")
-                with cc_all[4]: k_alpha = st.slider("K-Çizgi Görünürlüğü", 0.0, 1.0, 0.4, 0.1)
+        st.markdown("---")
+
+        # --- 2. ADIM: AĞIR VERİ OKUMA VE HAFIZAYA ALMA ---
+        if st.button("Verileri Oku ve Grafiği Hazırla", type="primary"):
+            if not (band_file and klabels_file and gap_file):
+                st.error("HATA: Grafiği çizmek için BAND.dat, KLABELS ve BAND_GAP dosyalarının üçünü de yüklemelisiniz!")
             else:
-                with cc_all[0]: band_color = st.color_picker("Bant Çizgisi Rengi", value="#000000")
-                with cc_all[1]: fill_color = st.color_picker("Band Gap Boyası", value="#2ecc71")
-                with cc_all[2]: fermi_color = st.color_picker("Fermi Çizgisi Rengi", value="#FF0000")
-                with cc_all[3]: k_alpha = st.slider("K-Çizgi Görünürlüğü", 0.0, 1.0, 0.4, 0.1)
-
-            st.markdown("**3. Görünürlük ve Etiket Ayarları**")
-            cv1, cv2, cv3 = st.columns(3)
-            with cv1: show_fill = st.checkbox("Band Arası Boyamayı Göster", value=True)
-            with cv2: show_gap_text = st.checkbox("Band Gap Metnini Göster", value=True)
-            with cv3: x_tick_pad = st.number_input("X Eksen Yazıları Mesafesi (Pad)", value=15, step=1)
-
-            st.markdown("**4. Metin Konumları ve Özel Metin Ekleme**")
-            cm1, cm2, cm3 = st.columns(3)
-            with cm1: panel_label = st.text_input("Panel Etiketi (a, b)", value="(a)")
-            with cm2: p_text_x = st.number_input("Gap Metni X Konumu", value=max(b_kcoords)/2, step=0.5)
-            with cm3: p_text_y = st.number_input("Gap Metni Y Konumu", value=def_mid_y, step=0.5)
-            
-            ct1, ct2, ct3 = st.columns([2, 1, 1])
-            with ct1: custom_text = st.text_input("Grafik İçi Özel Metin (Boş bırakılabilir)", value="")
-            with ct2: custom_text_x = st.number_input("Özel Metin X", value=0.0, step=0.5)
-            with ct3: custom_text_y = st.number_input("Özel Metin Y", value=0.0, step=0.5)
-
-        # 🎨 ÇİZİM BÖLÜMÜ
-        
-        # --- TÜM FONT AYARLARINI TIMES NEW ROMAN YAPMA ---
-        import matplotlib as mpl
-        mpl.rcParams['font.family'] = 'serif'
-        mpl.rcParams['font.serif'] = ['Times New Roman']
-        mpl.rcParams['mathtext.fontset'] = 'custom'
-        mpl.rcParams['mathtext.rm'] = 'Times New Roman'
-        mpl.rcParams['mathtext.it'] = 'Times New Roman:italic'
-        mpl.rcParams['mathtext.bf'] = 'Times New Roman:bold'
-        # -------------------------------------------------
-
-        fig, ax = plt.subplots(figsize=(10, 8))
-
-        # Bantları Çizme (Hafızadan)
-        if is_spin_plot:
-            for idx in st.session_state.band_data_up.keys():
-                data_up = np.array(st.session_state.band_data_up[idx])
-                data_dn = np.array(st.session_state.band_data_dn[idx])
-                
-                lbl_up = r"Spin $\uparrow$" if idx == 1 else ""
-                lbl_dn = r"Spin $\downarrow$" if idx == 1 else ""
-                
-                ax.plot(data_up[:, 0], data_up[:, 1], color=color_up, lw=1.5, zorder=2, label=lbl_up)
-                ax.plot(data_dn[:, 0], data_dn[:, 1], color=color_dn, lw=1.5, ls='--', zorder=2, label=lbl_dn)
-            
-            ax.legend(loc='upper right', frameon=True, fontsize=14, prop={'weight': 'bold', 'family': 'Times New Roman'}).get_frame().set_linewidth(1.5)
-        else:
-            for idx, data_list in st.session_state.band_data_up.items():
-                data = np.array(data_list)
-                ax.plot(data[:, 0], data[:, 1], color=band_color, lw=2.0, zorder=2)
-
-        # VBM-CBM Boyama (Gap varsa ve Checkbox seçiliyse)
-        if b_gap > 0.01 and show_fill:
-            ax.fill_between(st.session_state.band_vbm_x, st.session_state.band_vbm_y, st.session_state.band_cbm_y, 
-                            color=fill_color, alpha=0.3, zorder=1)
-
-        # K-Noktası Dikey Çizgileri ve Fermi Seviyesi
-        ax.axhline(0, color=fermi_color, ls='--', lw=2.0, zorder=3) 
-        for c in b_kcoords: 
-            ax.axvline(c, color='blue', lw=1.5, zorder=0, alpha=k_alpha) 
-
-        # Band Gap Metni (Checkbox seçiliyse)
-        if b_gap > 0.01 and show_gap_text:
-            ax.text(p_text_x, p_text_y, f"Band gap = {b_gap:.2f} eV", 
-                    fontsize=16, fontweight='bold', ha='center', va='center', zorder=10,
-                    bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.2'))
-            
-        # Özel Metin Ekleme
-        if custom_text.strip():
-            ax.text(custom_text_x, custom_text_y, custom_text, 
-                    fontsize=16, fontweight='bold', ha='center', va='center', zorder=10)
-
-        # Eksen Formatlama
-        ax.set_xticks(b_kcoords)
-        ax.set_xticklabels(b_klabels, fontsize=16, fontweight='bold')
-        ax.set_ylabel(r'$\mathbf{Energy\ (E - E_{F})\ (eV)}$', fontsize=18, labelpad=15)
-        
-        ax.set_ylim(p_y_min, p_y_max)
-        ax.set_xlim(min(b_kcoords), max(b_kcoords))
-
-        # Tick Ayarları (x_tick_pad değişkeni eklendi)
-        ax.yaxis.set_major_locator(MultipleLocator(p_y_step))
-        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
-        ax.tick_params(axis='y', labelsize=14, direction='in', length=10, width=2.0, right=False)
-        ax.tick_params(axis='y', which='minor', direction='in', length=5, width=1.5, right=False)
-        ax.tick_params(axis='x', pad=x_tick_pad, length=0) # Dinamik pad değeri
-
-        for label in ax.get_yticklabels():
-            label.set_fontweight('bold')
-
-        # Panel Etiketi
-        if panel_label.strip():
-            ax.text(-0.05, 0.97, panel_label, transform=ax.transAxes, 
-                    fontsize=18, fontweight='bold', ha='right', va='bottom')
-
-        # Çerçeve
-        for spine in ax.spines.values():
-            spine.set_linewidth(2.5)
-
-        plt.tight_layout()
-
-        # Ekrana Basma
-        st.pyplot(fig)
-        
-        # İndirme Butonu
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
-        st.download_button(
-            label="📥 Son Ayarlarla Bant Grafiğini İndir (PNG - 600 DPI)",
-            data=buf.getvalue(),
-            file_name="Band_Structure_Origin.png",
-            mime="image/png"
-        )
-# ==========================================
-# MODÜL 11: YOĞUNLUK DURUMLARI (DOS VE PDOS) - ORIGIN STYLE
-# ==========================================
-elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
-    st.header("Elektronik Yoğunluk Durumları (TDOS & PDOS)")
-    st.markdown("Vaspkit'ten elde ettiğiniz `TDOS.dat` ve dilediğiniz sayıdaki PDOS dosyalarınızı yükleyerek makale kalitesinde, Origin tarzı interaktif grafikler oluşturun.")
-    st.markdown("---")
-
-    # --- 1. KULLANICI ARAYÜZÜ (Dosya Yükleme) ---
-    is_spin = st.checkbox("Manyetik / Spin-Polarize (ISPIN=2) Hesaplama Mı?", value=False, help="Eğer hesaplamanızda Spin-Up ve Spin-Down durumları ayrıysa (3 sütunlu dosya), bunu işaretleyin. Grafikte Spin-Down durumları X ekseninin altına simetrik çizilecektir.")
-    
-    c1, c2 = st.columns([1, 1.5])
-    
-    with c1:
-        st.subheader("1. Total DOS (Zorunlu)")
-        tdos_file = st.file_uploader("TDOS.dat Yükle", type=["dat", "txt"], key="tdos")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        n_pdos = st.number_input("Kaç Adet PDOS (Partial DOS) Çizeceksiniz?", min_value=0, max_value=8, value=3, step=1)
-
-    with c2:
-        st.subheader("2. Partial DOS Dosyaları")
-        temp_pdos_data = []
-        
-        if n_pdos > 0:
-            pdos_defaults = [
-                {"label": "K-s", "color": "#FBC02D", "ls": "-"},
-                {"label": "Ti-3d", "color": "#1976D2", "ls": "-"},
-                {"label": "H-1s", "color": "#D32F2F", "ls": "-"},
-                {"label": "Ti-4s", "color": "#388E3C", "ls": "--"},
-                {"label": "O-2p", "color": "#8E44AD", "ls": "-"},
-                {"label": "C-2p", "color": "#E67E22", "ls": "-"}
-            ]
-            
-            p_cols = st.columns(2)
-            for i in range(n_pdos):
-                with p_cols[i % 2]:
-                    with st.expander(f"PDOS Yuvası {i+1}", expanded=True):
-                        def_lbl = pdos_defaults[i]["label"] if i < len(pdos_defaults) else f"Atom-{i+1}"
-                        def_col = pdos_defaults[i]["color"] if i < len(pdos_defaults) else "#000000"
-                        def_ls = pdos_defaults[i]["ls"] if i < len(pdos_defaults) else "-"
-                        
-                        p_file = st.file_uploader(f"Dosya {i+1}", type=["dat", "txt"], key=f"pfile_{i}")
-                        p_label = st.text_input(f"Etiket", value=def_lbl, key=f"plbl_{i}")
-                        cc1, cc2 = st.columns(2)
-                        with cc1: p_color = st.color_picker(f"Çizgi Rengi", value=def_col, key=f"pcol_{i}")
-                        with cc2: p_ls = st.selectbox(f"Çizgi", ["-", "--", ":", "-."], index=["-", "--", ":", "-."].index(def_ls), key=f"pls_{i}")
-                        
-                        temp_pdos_data.append({
-                            "file": p_file,
-                            "label": rf"$\mathbf{{{p_label}}}$",
-                            "color": p_color,
-                            "ls": p_ls
-                        })
-
-    st.markdown("---")
-
-    # --- 2. ADIM: AĞIR VERİ OKUMA VE HAFIZAYA ALMA ---
-    if st.button("Verileri Oku ve Grafiği Hazırla", type="primary"):
-        if tdos_file is None:
-            st.error("HATA: Grafiği çizmek için mutlaka Total DOS (TDOS.dat) dosyasını yüklemelisiniz!")
-        else:
-            try:
-                # TDOS Okuma
-                tdos_file.seek(0)
-                tdos_arr = np.loadtxt(tdos_file)
-                
-                # PDOS Okuma
-                valid_pdos = []
-                for p in temp_pdos_data:
-                    if p["file"] is not None:
-                        p["file"].seek(0)
-                        p_arr = np.loadtxt(p["file"])
-                        valid_pdos.append({"arr": p_arr, "label": p["label"], "color": p["color"], "ls": p["ls"]})
-                
-                # Otonom Y-Ekseni Sınırı Bulma
-                mask = (tdos_arr[:, 0] >= -4.0) & (tdos_arr[:, 0] <= 8.0)
-                if len(tdos_arr[mask]) > 0:
-                    if is_spin and tdos_arr.shape[1] >= 3:
-                        max_val = np.max(np.abs(tdos_arr[mask, 1:3]))
-                    else:
-                        max_val = np.max(tdos_arr[mask, 1])
-                    auto_y_limit = float(np.ceil(max_val / 5) * 5)
-                    if auto_y_limit == 0: auto_y_limit = 5.0
-                else:
-                    auto_y_limit = 20.0
-
-                # Hafızaya Kaydet
-                st.session_state.dos_ready = True
-                st.session_state.dos_is_spin = is_spin
-                st.session_state.dos_tdos = tdos_arr
-                st.session_state.dos_pdos = valid_pdos
-                st.session_state.dos_ymax = auto_y_limit
-                
-                st.success(f"✅ TDOS ve {len(valid_pdos)} adet PDOS verisi başarıyla hafızaya alındı!")
-
-            except Exception as e:
-                st.error(f"Veri okuma hatası: {e}. Dosya formatınızın doğru olduğundan emin olun.")
-
-    # --- 3. ADIM: ORIGIN KONTROL PANELİ VE DİNAMİK ÇİZİM ---
-    if st.session_state.get("dos_ready", False):
-
-        tdos_arr = st.session_state.dos_tdos
-        pdos_list = st.session_state.dos_pdos
-        def_ymax = st.session_state.dos_ymax
-        is_spin_plot = st.session_state.dos_is_spin
-
-        # Global Font Ayarı (Times New Roman)
-        plt.rcParams['font.family'] = 'serif'
-        plt.rcParams['font.serif'] = ['Times New Roman']
-        plt.rcParams['mathtext.fontset'] = 'stix' # Times uyumlu matematiksel semboller
-
-        # 📐 EKSEN VE İNCE AYAR PANELİ
-        with st.expander("📐 Eksen, Boyut ve Yazı Tipi (Font) Ayarları (Anlık Tepki)", expanded=True):
-            st.markdown("**1. X Ekseni (Enerji, eV)**")
-            cx1, cx2, cx3 = st.columns(3)
-            with cx1: p_x_min = st.number_input("X Min", value=-4.0, step=1.0)
-            with cx2: p_x_max = st.number_input("X Maks", value=8.0, step=1.0)
-            with cx3: p_x_step = st.number_input("X Adımı (Tick)", value=2.0, step=1.0)
-
-            st.markdown("**2. Y Ekseni (States/eV)**")
-            cy1, cy2, cy3 = st.columns(3)
-            default_ymin = -def_ymax if is_spin_plot else 0.0
-            with cy1: p_y_min = st.number_input("Y Min", value=float(default_ymin), step=5.0)
-            with cy2: p_y_max = st.number_input("Y Maks", value=def_ymax, step=5.0)
-            with cy3: p_y_step = st.number_input("Y Adımı (Tick)", value=float(np.ceil(def_ymax/4)), step=5.0)
-
-            st.markdown("**3. Grafik Boyutları (Genişlik x Yükseklik)**")
-            cw, ch = st.columns(2)
-            with cw: fig_w = st.slider("Grafik Genişliği (inch)", 5.0, 20.0, 10.0, 0.5)
-            with ch: fig_h = st.slider("Grafik Yüksekliği (inch)", 5.0, 15.0, 7.5, 0.5)
-
-            st.markdown("**4. Yazı Tipi Büyüklükleri (Font Size)**")
-            cf1, cf2, cf3, cf4 = st.columns(4)
-            with cf1: p_font_title = st.number_input("Eksen Başlıkları", value=18, min_value=8, step=1)
-            with cf2: p_font_tick = st.number_input("Eksen Değerleri", value=16, min_value=8, step=1)
-            with cf3: p_font_leg = st.number_input("Çizgi Etiketleri (Lejant)", value=16, min_value=8, step=1)
-            with cf4: p_font_ef = st.number_input("Fermi (EF) Etiketi", value=18, min_value=8, step=1)
-
-            st.markdown("**5. Estetik, Lejant ve Fermi Konumu**")
-            cm1, cm2, cm3, cm4 = st.columns(4)
-            with cm1: p_leg_loc = st.selectbox("Lejant Konumu", ["best", "upper right", "upper left", "center right", "center left"], index=1)
-            with cm2: p_fermi_color = st.color_picker("Fermi Çizgisi Rengi", value="#000000")
-            with cm3: p_ef_x = st.slider("Fermi Etiketi (X Konumu)", 0.0, 1.0, 0.51, 0.01)
-            with cm4: p_ef_y = st.slider("Fermi Etiketi (Y Konumu)", 0.0, 1.0, 0.90 if not is_spin_plot else 0.55, 0.01)
-
-            if is_spin_plot:
-                st.markdown("**6. Spin Up / Down Etiket Ayarları**")
-                cs1, cs2, cs3 = st.columns(3)
-                with cs1: spin_font_size = st.number_input("Spin Yazı Boyutu", value=20, min_value=8, step=1)
-                with cs2: spin_up_col = st.color_picker("Spin Up Rengi", value="#FF0000")
-                with cs3: spin_dn_col = st.color_picker("Spin Down Rengi", value="#0000FF")
-
-        # 🎨 DOLGU VE DESEN AYARLARI PANELİ
-        hatch_options = {"Yok": None, "Eğik Çizgi (/)": "/", "Ters Eğik (\\)": "\\", "Dik Çizgi (|)": "|", "Yatay Çizgi (-)": "-", "Artı (+)": "+", "Çarpı (x)": "x", "Nokta (.)": ".", "Yıldız (*)": "*"}
-        
-        with st.expander("🎨 Dolgu, Desen ve Şeffaflık Ayarları", expanded=False):
-            st.markdown("**Total DOS (TDOS) Dolgu Ayarı**")
-            c_t1, c_t2, c_t3 = st.columns(3)
-            with c_t1: tdos_f_color = st.color_picker("TDOS Dolgu Rengi", value="#808080")
-            with c_t2: tdos_alpha = st.slider("TDOS Şeffaflık", 0.0, 1.0, 0.1)
-            with c_t3: tdos_hatch_sel = st.selectbox("TDOS Deseni", list(hatch_options.keys()), index=0, key="tdos_h")
-            tdos_hatch = hatch_options[tdos_hatch_sel]
-
-            pdos_styles = []
-            if len(pdos_list) > 0:
-                st.markdown("**Partial DOS (PDOS) Dolgu Ayarları**")
-                for i, p in enumerate(pdos_list):
-                    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-                    with col1: st.markdown(f"<br>**{p['label']}**", unsafe_allow_html=True)
-                    with col2: p_f_color = st.color_picker("Renk", value=p["color"], key=f"pf_col_{i}")
-                    with col3: p_alpha = st.slider("Şeffaflık", 0.0, 1.0, 0.15, key=f"pf_alp_{i}")
-                    with col4: 
-                        p_hatch_sel = st.selectbox("Desen", list(hatch_options.keys()), index=0, key=f"pf_hat_{i}")
-                        p_hatch = hatch_options[p_hatch_sel]
+                try:
                     
-                    pdos_styles.append({"f_color": p_f_color, "alpha": p_alpha, "hatch": p_hatch})
+                    # Dosyaları okuma
+                    klabels_text = klabels_file.getvalue().decode("utf-8").splitlines()
+                    gap_text = gap_file.getvalue().decode("utf-8")
+                    band_text = band_file.getvalue().decode("utf-8").splitlines()
 
-        # 🎨 ÇİZİM BÖLÜMÜ
-        fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+                    # 1. K-NOKTALARI OKUMA
+                    k_labels, k_coords = [], []
+                    for line in klabels_text[1:]: 
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            try:
+                                k_coords.append(float(parts[1]))
+                                label = parts[0].upper()
+                                k_labels.append(r"$\mathbf{\Gamma}$" if label == "GAMMA" else rf"$\mathbf{{{label}}}$")
+                            except ValueError: 
+                                continue
 
-        # --- TDOS ÇİZİMİ ---
-        ax.plot(tdos_arr[:,0], tdos_arr[:,1], color='dimgray', lw=3, alpha=0.4, label=r'$\mathbf{Total\ DOS}$')
-        ax.fill_between(tdos_arr[:,0], 0, tdos_arr[:,1], color=tdos_f_color, alpha=tdos_alpha, hatch=tdos_hatch, zorder=1)
-        
-        # Eğer Spin-Polarize ise 3. sütunu (Spin-DOWN) çiz
-        if is_spin_plot and tdos_arr.shape[1] >= 3:
-            ax.plot(tdos_arr[:,0], tdos_arr[:,2], color='dimgray', lw=3, alpha=0.4)
-            ax.fill_between(tdos_arr[:,0], 0, tdos_arr[:,2], color=tdos_f_color, alpha=tdos_alpha, hatch=tdos_hatch, zorder=1)
+                    # 2. BAND GAP VE İNDEKSLERİ OKUMA (Spin Uyumlu)
+                    gap_lines = gap_text.splitlines()
+                    band_gap = 0.0
+                    vbm_up, vbm_dn = 1, 1
+                    cbm_up, cbm_dn = 1, 1
+                    
+                    for line in gap_lines:
+                        if "Band Gap (eV):" in line:
+                            vals = line.split(":")[1].split()
+                            band_gap = float(vals[-1]) # ISPIN=2'de sonuncu değer TOTAL gap'tir
+                        elif "Band Indexes of VBM & CBM:" in line: # Eski/ISPIN=1 formatı
+                            vals = line.split(":")[1].split()
+                            vbm_up, cbm_up = int(vals[0]), int(vals[1])
+                            vbm_dn, cbm_dn = vbm_up, cbm_up
+                        elif "Band Index of VBM:" in line: # ISPIN=2 formatı
+                            vals = line.split(":")[1].split()
+                            vbm_up = int(vals[0])
+                            vbm_dn = int(vals[1]) if len(vals) >= 3 else int(vals[0])
+                        elif "Band Index of CBM:" in line: # ISPIN=2 formatı
+                            vals = line.split(":")[1].split()
+                            cbm_up = int(vals[0])
+                            cbm_dn = int(vals[1]) if len(vals) >= 3 else int(vals[0])
 
-        # --- PDOS ÇİZİMİ ---
-        for i, p in enumerate(pdos_list):
-            style = pdos_styles[i]
-            ax.plot(p["arr"][:,0], p["arr"][:,1], label=p["label"], color=p["color"], lw=3, ls=p["ls"], zorder=3)
-            ax.fill_between(p["arr"][:,0], 0, p["arr"][:,1], color=style["f_color"], alpha=style["alpha"], hatch=style["hatch"], zorder=2)
+                    # 3. BAND VERİLERİ YÜKLEME
+                    bands_up = {}
+                    bands_dn = {}
+                    curr = None
+                    global_y_min, global_y_max = 999, -999
+                    
+                    for line in band_text:
+                        if line.startswith("# Band-Index:"):
+                            curr = int(line.split(":")[1].strip())
+                            bands_up[curr] = []
+                            bands_dn[curr] = []
+                        elif line.strip() and not line.startswith("#") and curr is not None:
+                            parts = line.split()
+                            if not is_spin and len(parts) >= 2:
+                                x, y = float(parts[0]), float(parts[1])
+                                bands_up[curr].append([x, y])
+                                global_y_min, global_y_max = min(global_y_min, y), max(global_y_max, y)
+                            elif is_spin and len(parts) >= 3:
+                                x, y_up, y_dn = float(parts[0]), float(parts[1]), float(parts[2])
+                                bands_up[curr].append([x, y_up])
+                                bands_dn[curr].append([x, y_dn])
+                                global_y_min = min(global_y_min, y_up, y_dn)
+                                global_y_max = max(global_y_max, y_up, y_dn)
+
+                    # VBM-CBM Verilerini Hazırlama (Spin Polarize Durumunda Global VBM/CBM Seçimi)
+                    vbm_data_up = np.array(bands_up[vbm_up])
+                    cbm_data_up = np.array(bands_up[cbm_up])
+                    
+                    if is_spin:
+                        vbm_data_dn = np.array(bands_dn[vbm_dn])
+                        cbm_data_dn = np.array(bands_dn[cbm_dn])
+                        # Toplam Gap boyaması için en yüksek VBM ve en düşük CBM'i bul
+                        vbm_data = vbm_data_up if np.max(vbm_data_up[:, 1]) > np.max(vbm_data_dn[:, 1]) else vbm_data_dn
+                        cbm_data = cbm_data_up if np.min(cbm_data_up[:, 1]) < np.min(cbm_data_dn[:, 1]) else cbm_data_dn
+                    else:
+                        vbm_data = vbm_data_up
+                        cbm_data = cbm_data_up
+
+                    sort_idx_vbm = np.argsort(vbm_data[:, 0])
+                    sort_idx_cbm = np.argsort(cbm_data[:, 0])
+                    vbm_x_sorted, vbm_y_sorted = vbm_data[sort_idx_vbm, 0], vbm_data[sort_idx_vbm, 1]
+                    cbm_x_sorted, cbm_y_sorted = cbm_data[sort_idx_cbm, 0], cbm_data[sort_idx_cbm, 1]
+
+                    # Hafızaya Kaydet
+                    st.session_state.band_ready = True
+                    st.session_state.band_is_spin = is_spin
+                    st.session_state.band_data_up = bands_up
+                    st.session_state.band_data_dn = bands_dn
+                    st.session_state.band_kcoords = k_coords
+                    st.session_state.band_klabels = k_labels
+                    st.session_state.band_gap = band_gap
+                    st.session_state.band_vbm_x = vbm_x_sorted
+                    st.session_state.band_vbm_y = vbm_y_sorted
+                    st.session_state.band_cbm_x = cbm_x_sorted
+                    st.session_state.band_cbm_y = cbm_y_sorted
+                    
+                    # Otonom Sınırlar
+                    st.session_state.band_ymin = max(-10.0, np.floor(global_y_min))
+                    st.session_state.band_ymax = min(10.0, np.ceil(global_y_max))
+                    
+                    st.success("✅ Bant verileri başarıyla okundu ve hafızaya alındı!")
+
+                except Exception as e:
+                    st.error(f"Grafik okuma hatası: {e}")
+
+        # --- 3. ADIM: ORIGIN KONTROL PANELİ VE DİNAMİK ÇİZİM ---
+        if st.session_state.get("band_ready", False):
             
-            if is_spin_plot and p["arr"].shape[1] >= 3:
-                ax.plot(p["arr"][:,0], p["arr"][:,2], color=p["color"], lw=3, ls=p["ls"], zorder=3)
-                ax.fill_between(p["arr"][:,0], 0, p["arr"][:,2], color=style["f_color"], alpha=style["alpha"], hatch=style["hatch"], zorder=2)
+            b_kcoords = st.session_state.band_kcoords
+            b_klabels = st.session_state.band_klabels
+            b_gap = st.session_state.band_gap
+            def_ymin = st.session_state.band_ymin
+            def_ymax = st.session_state.band_ymax
+            is_spin_plot = st.session_state.band_is_spin
+            
+            def_mid_y = (np.max(st.session_state.band_vbm_y) + np.min(st.session_state.band_cbm_y)) / 2
 
-        # --- Y=0 ÇİZGİSİ VE SPIN ETİKETLERİ ---
-        if is_spin_plot:
-            ax.axhline(0, color='black', lw=1.0, ls='-', zorder=4)
-            # Spin Up / Down okları ve menüden gelen renk/boyut ayarları
-            ax.text(p_x_min + 0.5, p_y_max * 0.82, r'$\uparrow$ Spin Up', fontsize=spin_font_size, color=spin_up_col, fontweight='bold')
-            ax.text(p_x_min + 0.5, p_y_min * 0.85, r'$\downarrow$ Spin Down', fontsize=spin_font_size, color=spin_dn_col, fontweight='bold')
+            # 📐 EKSEN VE İNCE AYAR PANELİ
+            with st.expander("📐 Eksen, Estetik ve Özel Metin Ayarları (Anlık Tepki)", expanded=True):
+                st.markdown("**1. Y Ekseni Sınırları (Enerji, eV)**")
+                cy1, cy2, cy3 = st.columns(3)
+                with cy1: p_y_min = st.number_input("Y Min", value=float(def_ymin if def_ymin > -15 else -5.0), step=1.0)
+                with cy2: p_y_max = st.number_input("Y Maks", value=float(def_ymax if def_ymax < 15 else 5.0), step=1.0)
+                with cy3: p_y_step = st.number_input("Y Adımı (Tick)", value=2.0, step=0.5)
 
-        # --- FERMİ SEVİYESİ VE ETİKETİ ---
-        ax.axvline(x=0, color=p_fermi_color, linestyle=':', lw=3, zorder=5)
-        ax.text(p_ef_x, p_ef_y, r'$\mathbf{E_F}$', transform=ax.transAxes, fontsize=p_font_ef, fontweight='bold', color=p_fermi_color)
+                st.markdown("**2. Renkler ve K-Noktası Çizgileri**")
+                cc_all = st.columns(5) if is_spin_plot else st.columns(4)
+                if is_spin_plot:
+                    with cc_all[0]: color_up = st.color_picker("Spin UP Rengi", value="#E74C3C")
+                    with cc_all[1]: color_dn = st.color_picker("Spin DOWN Rengi", value="#2980B9")
+                    with cc_all[2]: fill_color = st.color_picker("Band Gap Boyası", value="#2ecc71")
+                    with cc_all[3]: fermi_color = st.color_picker("Fermi Çizgisi", value="#000000")
+                    with cc_all[4]: k_alpha = st.slider("K-Çizgi Görünürlüğü", 0.0, 1.0, 0.4, 0.1)
+                else:
+                    with cc_all[0]: band_color = st.color_picker("Bant Çizgisi Rengi", value="#000000")
+                    with cc_all[1]: fill_color = st.color_picker("Band Gap Boyası", value="#2ecc71")
+                    with cc_all[2]: fermi_color = st.color_picker("Fermi Çizgisi Rengi", value="#FF0000")
+                    with cc_all[3]: k_alpha = st.slider("K-Çizgi Görünürlüğü", 0.0, 1.0, 0.4, 0.1)
 
-        # --- EKSEN VE TICK AYARLARI ---
-        ax.set_xlim(p_x_min, p_x_max)
-        ax.set_ylim(p_y_min, p_y_max)
+                st.markdown("**3. Görünürlük ve Etiket Ayarları**")
+                cv1, cv2, cv3 = st.columns(3)
+                with cv1: show_fill = st.checkbox("Band Arası Boyamayı Göster", value=True)
+                with cv2: show_gap_text = st.checkbox("Band Gap Metnini Göster", value=True)
+                with cv3: x_tick_pad = st.number_input("X Eksen Yazıları Mesafesi (Pad)", value=15, step=1)
 
-        ax.xaxis.set_major_locator(MultipleLocator(p_x_step))
-        ax.yaxis.set_major_locator(MultipleLocator(p_y_step))
-        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
-        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
-        
-        # Eksen başlıkları için menüden gelen font büyüklüğü (p_font_title)
-        ax.set_xlabel(r'$\mathbf{Energy\ -\ E_F\ (eV)}$', fontsize=p_font_title, labelpad=15)
-        ax.set_ylabel(r'$\mathbf{Density\ of\ States\ (States\ /\ eV)}$', fontsize=p_font_title, labelpad=15)
+                st.markdown("**4. Metin Konumları ve Özel Metin Ekleme**")
+                cm1, cm2, cm3 = st.columns(3)
+                with cm1: panel_label = st.text_input("Panel Etiketi (a, b)", value="(a)")
+                with cm2: p_text_x = st.number_input("Gap Metni X Konumu", value=max(b_kcoords)/2, step=0.5)
+                with cm3: p_text_y = st.number_input("Gap Metni Y Konumu", value=def_mid_y, step=0.5)
+                
+                ct1, ct2, ct3 = st.columns([2, 1, 1])
+                with ct1: custom_text = st.text_input("Grafik İçi Özel Metin (Boş bırakılabilir)", value="")
+                with ct2: custom_text_x = st.number_input("Özel Metin X", value=0.0, step=0.5)
+                with ct3: custom_text_y = st.number_input("Özel Metin Y", value=0.0, step=0.5)
 
-        # Eksen değerleri (tick labels) için menüden gelen font büyüklüğü (p_font_tick)
-        ax.tick_params(axis='both', which='major', labelsize=p_font_tick, length=10, width=2.5, direction='in', pad=10, top=True, right=True)
-        ax.tick_params(axis='both', which='minor', length=6, width=1.5, direction='in', top=True, right=True)
-        
-        for label in ax.get_xticklabels() + ax.get_yticklabels():
-            label.set_fontname('Times New Roman')
-            label.set_fontweight('bold')
+            # 🎨 ÇİZİM BÖLÜMÜ
+            
+            # --- TÜM FONT AYARLARINI TIMES NEW ROMAN YAPMA ---
+            import matplotlib as mpl
+            mpl.rcParams['font.family'] = 'serif'
+            mpl.rcParams['font.serif'] = ['Times New Roman']
+            mpl.rcParams['mathtext.fontset'] = 'custom'
+            mpl.rcParams['mathtext.rm'] = 'Times New Roman'
+            mpl.rcParams['mathtext.it'] = 'Times New Roman:italic'
+            mpl.rcParams['mathtext.bf'] = 'Times New Roman:bold'
+            # -------------------------------------------------
 
-        # Çerçeve
-        for spine in ax.spines.values():
-            spine.set_linewidth(2.5)
+            fig, ax = plt.subplots(figsize=(10, 8))
 
-        # Lejant (Çizgi etiketleri) için menüden gelen font büyüklüğü (p_font_leg)
-        ax.legend(frameon=False, loc=p_leg_loc, fontsize=p_font_leg, handletextpad=0.5, borderaxespad=1)
+            # Bantları Çizme (Hafızadan)
+            if is_spin_plot:
+                for idx in st.session_state.band_data_up.keys():
+                    data_up = np.array(st.session_state.band_data_up[idx])
+                    data_dn = np.array(st.session_state.band_data_dn[idx])
+                    
+                    lbl_up = r"Spin $\uparrow$" if idx == 1 else ""
+                    lbl_dn = r"Spin $\downarrow$" if idx == 1 else ""
+                    
+                    ax.plot(data_up[:, 0], data_up[:, 1], color=color_up, lw=1.5, zorder=2, label=lbl_up)
+                    ax.plot(data_dn[:, 0], data_dn[:, 1], color=color_dn, lw=1.5, ls='--', zorder=2, label=lbl_dn)
+                
+                ax.legend(loc='upper right', frameon=True, fontsize=14, prop={'weight': 'bold', 'family': 'Times New Roman'}).get_frame().set_linewidth(1.5)
+            else:
+                for idx, data_list in st.session_state.band_data_up.items():
+                    data = np.array(data_list)
+                    ax.plot(data[:, 0], data[:, 1], color=band_color, lw=2.0, zorder=2)
 
-        plt.tight_layout()
+            # VBM-CBM Boyama (Gap varsa ve Checkbox seçiliyse)
+            if b_gap > 0.01 and show_fill:
+                ax.fill_between(st.session_state.band_vbm_x, st.session_state.band_vbm_y, st.session_state.band_cbm_y, 
+                                color=fill_color, alpha=0.3, zorder=1)
 
-        # Ekrana Basma
-        st.pyplot(fig)
-        
-        # İndirme Butonu
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", dpi=600, bbox_inches='tight', pad_inches=0.05)
-        st.download_button(
-            label="📥 Son Ayarlarla DOS/PDOS Grafiğini İndir (PNG - 600 DPI)",
-            data=buf.getvalue(),
-            file_name="DOS_PDOS_Spin_Origin.png",
-            mime="image/png"
-        )
+            # K-Noktası Dikey Çizgileri ve Fermi Seviyesi
+            ax.axhline(0, color=fermi_color, ls='--', lw=2.0, zorder=3) 
+            for c in b_kcoords: 
+                ax.axvline(c, color='blue', lw=1.5, zorder=0, alpha=k_alpha) 
+
+            # Band Gap Metni (Checkbox seçiliyse)
+            if b_gap > 0.01 and show_gap_text:
+                ax.text(p_text_x, p_text_y, f"Band gap = {b_gap:.2f} eV", 
+                        fontsize=16, fontweight='bold', ha='center', va='center', zorder=10,
+                        bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.2'))
+                
+            # Özel Metin Ekleme
+            if custom_text.strip():
+                ax.text(custom_text_x, custom_text_y, custom_text, 
+                        fontsize=16, fontweight='bold', ha='center', va='center', zorder=10)
+
+            # Eksen Formatlama
+            ax.set_xticks(b_kcoords)
+            ax.set_xticklabels(b_klabels, fontsize=16, fontweight='bold')
+            ax.set_ylabel(r'$\mathbf{Energy\ (E - E_{F})\ (eV)}$', fontsize=18, labelpad=15)
+            
+            ax.set_ylim(p_y_min, p_y_max)
+            ax.set_xlim(min(b_kcoords), max(b_kcoords))
+
+            # Tick Ayarları (x_tick_pad değişkeni eklendi)
+            ax.yaxis.set_major_locator(MultipleLocator(p_y_step))
+            ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+            ax.tick_params(axis='y', labelsize=14, direction='in', length=10, width=2.0, right=False)
+            ax.tick_params(axis='y', which='minor', direction='in', length=5, width=1.5, right=False)
+            ax.tick_params(axis='x', pad=x_tick_pad, length=0) # Dinamik pad değeri
+
+            for label in ax.get_yticklabels():
+                label.set_fontweight('bold')
+
+            # Panel Etiketi
+            if panel_label.strip():
+                ax.text(-0.05, 0.97, panel_label, transform=ax.transAxes, 
+                        fontsize=18, fontweight='bold', ha='right', va='bottom')
+
+            # Çerçeve
+            for spine in ax.spines.values():
+                spine.set_linewidth(2.5)
+
+            plt.tight_layout()
+
+            # Ekrana Basma
+            st.pyplot(fig)
+            
+            # İndirme Butonu
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
+            st.download_button(
+                label="📥 Son Ayarlarla Bant Grafiğini İndir (PNG - 600 DPI)",
+                data=buf.getvalue(),
+                file_name="Band_Structure_Origin.png",
+                mime="image/png"
+            )
                 # ==========================================
 # MODÜL 12: OTONOM NEB YAPI OLUŞTURUCU
 # ==========================================
