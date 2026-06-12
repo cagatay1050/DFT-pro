@@ -8562,7 +8562,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
     results = []
     plot_data = []
     
-    # Standart Renk Paleti (Kullanıcı değiştirebilir)
+    # Standart Renk Paleti
     default_colors = ['#E64B35', '#4DBBD5', '#00A087', '#3C5488', '#F39B7F']
 
     if uploaded_files:
@@ -8629,20 +8629,18 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             x = np.array(path["x"])
             y = np.array(path["y"])
             c = path["color"]
-            lbl = f"{path['label']} ($E_a$ = {y[1]:.2f} eV)"
+            lbl = path['label']
             
-            # PCHIP Pürüzsüzleştirme (Taşma yapmaz)
+            # PCHIP Pürüzsüzleştirme
             interpolator = PchipInterpolator(x, y)
             x_smooth = np.linspace(0, 1, 500)
             y_smooth = interpolator(x_smooth)
             
-            # Çizgi ve Noktalar
+            # SADECE ÇİZGİ ÇİZİLİYOR
             ax.plot(x_smooth, y_smooth, label=lbl, linewidth=ax_thick, color=c)
-            ax.scatter([x[0], x[2]], [y[0], y[2]], s=80, color=c, zorder=5, edgecolor='black', linewidth=1)
-            ax.scatter(x[1], y[1], marker="*", s=300, color=c, zorder=6, edgecolor='black', linewidth=1.5)
 
         # --- EKSEN LİMİT VE TİCK AYARLARI ---
-        ax.set_xlim(-0.05, 1.05)
+        ax.set_xlim(0, 1.0)
         ax.set_ylim(y_min, y_max)
         
         ax.xaxis.set_major_locator(MultipleLocator(x_maj))
@@ -8650,9 +8648,9 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         ax.xaxis.set_minor_locator(MultipleLocator(x_maj / 2))
         ax.yaxis.set_minor_locator(MultipleLocator(y_maj / 2))
         
-        # Tick kalınlık ve yönleri (İçe doğru, Q1 formatı)
-        ax.tick_params(axis='both', which='major', direction='in', length=6, width=ax_thick, labelsize=font_size-2, top=True, right=True)
-        ax.tick_params(axis='both', which='minor', direction='in', length=3, width=ax_thick*0.8, top=True, right=True)
+        # Tick kalınlık ve yönleri (Sağ ve Üst KAPALI)
+        ax.tick_params(axis='both', which='major', direction='in', length=6, width=ax_thick, labelsize=font_size-2, top=False, right=False)
+        ax.tick_params(axis='both', which='minor', direction='in', length=3, width=ax_thick*0.8, top=False, right=False)
 
         # Malzeme Adı (Sol Üst)
         ax.text(0.05, 0.95, mat_name, transform=ax.transAxes, fontsize=font_size+2, fontweight='bold', va='top', ha='left')
