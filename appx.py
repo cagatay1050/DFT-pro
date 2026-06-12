@@ -8485,204 +8485,165 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
                           data=buf.getvalue(), 
                           file_name="DOS_PDOS_Origin.png", 
                           mime="image/png")
-# ==========================================
-# MODÜL: CASTEP LST/QST KİNETİK ANALİZ
-# ==========================================
-elif secim == "🔋 CASTEP Kinetik Analiz":
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-    from scipy.interpolate import PchipInterpolator
-    import re
+import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+from scipy.interpolate import PchipInterpolator
+import re
 
-    # --- Q1 MAKALE GRAFİK STANDARTLARI (Nature/Science Stili) ---
-    mpl.rcParams['font.family'] = 'sans-serif'
-    mpl.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'DejaVu Sans']
-    mpl.rcParams['axes.linewidth'] = 1.5
-    mpl.rcParams['xtick.major.width'] = 1.5
-    mpl.rcParams['ytick.major.width'] = 1.5
-    mpl.rcParams['xtick.direction'] = 'in'
-    mpl.rcParams['ytick.direction'] = 'in'
-    mpl.rcParams['xtick.labelsize'] = 12
-    mpl.rcParams['ytick.labelsize'] = 12
-    mpl.rcParams['axes.labelsize'] = 14
-    mpl.rcParams['legend.fontsize'] = 11
-    mpl.rcParams['legend.frameon'] = False
-    mpl.rcParams['figure.dpi'] = 300
+# Sayfa genişliğini ayarlayalım
+st.set_page_config(page_title="CASTEP Kinetik Analiz", layout="wide")
 
-    # --- OTOMATİK VERİ ÇEKME FONKSİYONU (GÜNCELLENDİ) ---
-    def parse_castep(content):
-        data = {}
-        try:
-            data['barrier'] = float(re.search(r"Barrier from reactant:\s+([\d\.]+)\s+eV", content).group(1))
-            data['location'] = float(re.search(r"Location of transition state:\s+([\d\.]+)", content).group(1))
-            data['reaction_e'] = float(re.search(r"Energy of reaction:\s+([\-\d\.]+)\s+eV", content).group(1))
-            # Hacmi (.castep içinden) otomatik okur
-            volume_match = re.search(r"Current cell volume =\s+([\d\.]+)\s+A\*\*3", content)
-            data['volume'] = float(volume_match.group(1)) if volume_match else 990.06
-            return data
-        except AttributeError:
-            return None
-# ==========================================
-# MODÜL: CASTEP LST/QST KİNETİK ANALİZ
-# ==========================================
-elif secim == "🔋 CASTEP Kinetik Analiz":
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-    from scipy.interpolate import PchipInterpolator
-    import re
+# --- Q1 MAKALE GRAFİK STANDARTLARI (Nature/Science Stili) ---
+mpl.rcParams['font.family'] = 'sans-serif'
+mpl.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'DejaVu Sans']
+mpl.rcParams['axes.linewidth'] = 1.5
+mpl.rcParams['xtick.major.width'] = 1.5
+mpl.rcParams['ytick.major.width'] = 1.5
+mpl.rcParams['xtick.direction'] = 'in'
+mpl.rcParams['ytick.direction'] = 'in'
+mpl.rcParams['xtick.labelsize'] = 12
+mpl.rcParams['ytick.labelsize'] = 12
+mpl.rcParams['axes.labelsize'] = 14
+mpl.rcParams['legend.fontsize'] = 11
+mpl.rcParams['legend.frameon'] = False
+mpl.rcParams['figure.dpi'] = 300
 
-    # --- Q1 MAKALE GRAFİK STANDARTLARI (Nature/Science Stili) ---
-    mpl.rcParams['font.family'] = 'sans-serif'
-    mpl.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'DejaVu Sans']
-    mpl.rcParams['axes.linewidth'] = 1.5
-    mpl.rcParams['xtick.major.width'] = 1.5
-    mpl.rcParams['ytick.major.width'] = 1.5
-    mpl.rcParams['xtick.direction'] = 'in'
-    mpl.rcParams['ytick.direction'] = 'in'
-    mpl.rcParams['xtick.labelsize'] = 12
-    mpl.rcParams['ytick.labelsize'] = 12
-    mpl.rcParams['axes.labelsize'] = 14
-    mpl.rcParams['legend.fontsize'] = 11
-    mpl.rcParams['legend.frameon'] = False
-    mpl.rcParams['figure.dpi'] = 300
+# --- OTOMATİK VERİ ÇEKME FONKSİYONU ---
+def parse_castep(content):
+    data = {}
+    try:
+        # re.findall ile tüm eşleşmeleri bulur, [-1] ile DOSYADAKİ EN SONUNCU (GERÇEK) değeri alır.
+        barriers = re.findall(r"Barrier from reactant:\s+([\d\.]+)\s+eV", content)
+        data['barrier'] = float(barriers[-1]) if barriers else None
+        
+        locations = re.findall(r"Location of transition state:\s+([\d\.]+)", content)
+        data['location'] = float(locations[-1]) if locations else 0.5
+        
+        reactions = re.findall(r"Energy of reaction:\s+([\-\d\.]+)\s+eV", content)
+        data['reaction_e'] = float(reactions[-1]) if reactions else None
+        
+        volumes = re.findall(r"Current cell volume =\s+([\d\.]+)\s+A\*\*3", content)
+        data['volume'] = float(volumes[-1]) if volumes else 990.06
+        
+        return data
+    except Exception as e:
+        return None
 
-    # --- OTOMATİK VERİ ÇEKME FONKSİYONU ---
-    def parse_castep(content):
-        data = {}
-        try:
-            # re.findall ile tüm eşleşmeleri bulur, [-1] ile DOSYADAKİ EN SONUNCU (GERÇEK) değeri alır.
-            barriers = re.findall(r"Barrier from reactant:\s+([\d\.]+)\s+eV", content)
-            data['barrier'] = float(barriers[-1]) if barriers else None
-            
-            locations = re.findall(r"Location of transition state:\s+([\d\.]+)", content)
-            data['location'] = float(locations[-1]) if locations else 0.5
-            
-            reactions = re.findall(r"Energy of reaction:\s+([\-\d\.]+)\s+eV", content)
-            data['reaction_e'] = float(reactions[-1]) if reactions else None
-            
-            volumes = re.findall(r"Current cell volume =\s+([\d\.]+)\s+A\*\*3", content)
-            data['volume'] = float(volumes[-1]) if volumes else 990.06
-            
-            return data
-        except Exception as e:
-            return None
+# --- ARAYÜZ ---
+st.header("🔋 CASTEP LST/QST Kinetik Analizörü")
+st.markdown("`.castep` dosyalarından enerji ve hacim verilerini otomatik çeker, Q1 makale standartlarında difüzyon bariyeri grafikleri ve termodinamik hesaplamalar üretir.")
+st.markdown("---")
 
-    # --- ARAYÜZ ---
-    st.header("🔋 CASTEP LST/QST Kinetik Analizörü")
-    st.markdown("`.castep` dosyalarından enerji ve hacim verilerini otomatik çeker, Q1 makale standartlarında difüzyon bariyeri grafikleri ve termodinamik hesaplamalar üretir.")
+# FİZİKSEL SABİTLER
+K_B_EV = 8.617333262e-5  
+K_B_J = 1.380649e-23     
+E_CHARGE = 1.602176634e-19 
+
+# 1. GLOBAL PARAMETRELER
+with st.expander("⚙️ Termodinamik Parametreleri Ayarla (D ve Sigma İçin)", expanded=True):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        T = st.number_input("Sıcaklık (T) [Kelvin]", value=300.0, step=10.0)
+    with col2:
+        N_ions = st.number_input("Mobil İyon Sayısı (N)", value=1, step=1)
+        Z_ion = st.number_input("İyon Yükü (Z) (H=1)", value=1, step=1)
+    with col3:
+        v0 = st.number_input("Deneme Frekansı (v0) [Hz]", value=1.0e13, format="%e")
+
+# 2. DOSYA YÜKLEME ALANI
+st.subheader("📂 CASTEP Dosyalarını Yükle")
+uploaded_files = st.file_uploader("LST/QST çıktı (.castep) dosyalarını seçin", type=["castep"], accept_multiple_files=True)
+
+results = []
+plot_data = []
+
+if uploaded_files:
     st.markdown("---")
-
-    # FİZİKSEL SABİTLER
-    K_B_EV = 8.617333262e-5  
-    K_B_J = 1.380649e-23     
-    E_CHARGE = 1.602176634e-19 
-
-    # 1. GLOBAL PARAMETRELER
-    with st.expander("⚙️ Termodinamik Parametreleri Ayarla (D ve Sigma İçin)", expanded=True):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            T = st.number_input("Sıcaklık (T) [Kelvin]", value=300.0, step=10.0)
-        with col2:
-            N_ions = st.number_input("Mobil İyon Sayısı (N)", value=1, step=1)
-            Z_ion = st.number_input("İyon Yükü (Z) (H=1)", value=1, step=1)
-        with col3:
-            v0 = st.number_input("Deneme Frekansı (v0) [Hz]", value=1.0e13, format="%e")
-
-    # 2. DOSYA YÜKLEME ALANI
-    st.subheader("📂 CASTEP Dosyalarını Yükle")
-    uploaded_files = st.file_uploader("LST/QST çıktı (.castep) dosyalarını seçin", type=["castep"], accept_multiple_files=True)
-
-    results = []
-    plot_data = []
-
-    if uploaded_files:
-        st.markdown("---")
-        st.info("Her bir difüzyon yolu için 3 boyutlu modelden ölçtüğünüz sıçrama mesafesini (a0) aşağıya giriniz.")
-        
-        for idx, file in enumerate(uploaded_files):
-            with st.container():
-                col_a, col_b = st.columns([1, 2])
+    st.info("Her bir difüzyon yolu için 3 boyutlu modelden ölçtüğünüz sıçrama mesafesini (a0) aşağıya giriniz.")
+    
+    for idx, file in enumerate(uploaded_files):
+        with st.container():
+            col_a, col_b = st.columns([1, 2])
+            
+            with col_a:
+                st.markdown(f"**Dosya:** `{file.name}`")
+                a0 = st.number_input(f"a0 (Å)", value=2.52, step=0.05, key=f"a0_{idx}")
+            
+            with col_b:
+                content = file.read().decode("utf-8")
+                parsed_data = parse_castep(content)
                 
-                with col_a:
-                    st.markdown(f"**Dosya:** `{file.name}`")
-                    a0 = st.number_input(f"a0 (Å)", value=2.52, step=0.05, key=f"a0_{idx}")
-                
-                with col_b:
-                    content = file.read().decode("utf-8")
-                    parsed_data = parse_castep(content)
+                if parsed_data and parsed_data['barrier'] is not None:
+                    Ea = parsed_data['barrier']
+                    loc = parsed_data['location']
+                    E_rxn = parsed_data['reaction_e']
+                    V_ang = parsed_data['volume']
                     
-                    if parsed_data and parsed_data['barrier'] is not None:
-                        Ea = parsed_data['barrier']
-                        loc = parsed_data['location']
-                        E_rxn = parsed_data['reaction_e']
-                        V_ang = parsed_data['volume']
-                        
-                        # Dosyadan okunan hacme göre Konsantrasyon (cH) hesabı
-                        c_H = N_ions / (V_ang * 1e-24)
-                        
-                        # Kinetik Hesaplamalar
-                        D = ((a0 * 1e-8)**2) * v0 * np.exp(-Ea / (K_B_EV * T))
-                        sigma = (c_H * (Z_ion * E_CHARGE)**2 * D) / (K_B_J * T)
-                        
-                        st.success(f"✅ Okunan Veriler -> **Ea:** {Ea} eV | **Hacim:** {V_ang:.2f} Å³ | **TS Konumu:** {loc}")
-                        
-                        results.append({
-                            "Path (Dosya)": file.name,
-                            "Hacim (Å³)": round(V_ang, 2),
-                            "Ea (eV)": Ea,
-                            "a0 (Å)": a0,
-                            "D (cm²/s)": f"{D:.3e}",
-                            "Sigma (S/cm)": f"{sigma:.3e}"
-                        })
-                        plot_data.append({"name": file.name, "x": [0.0, loc, 1.0], "y": [0.0, Ea, E_rxn]})
-                    else:
-                        st.error("⚠️ LST/QST verisi okunamadı! .castep dosyanızın başarıyla tamamlandığından emin olun.")
-                st.markdown("---")
+                    # Dosyadan okunan hacme göre Konsantrasyon (cH) hesabı
+                    c_H = N_ions / (V_ang * 1e-24)
+                    
+                    # Kinetik Hesaplamalar
+                    D = ((a0 * 1e-8)**2) * v0 * np.exp(-Ea / (K_B_EV * T))
+                    sigma = (c_H * (Z_ion * E_CHARGE)**2 * D) / (K_B_J * T)
+                    
+                    st.success(f"✅ Okunan Veriler -> **Ea:** {Ea} eV | **Hacim:** {V_ang:.2f} Å³ | **TS Konumu:** {loc}")
+                    
+                    results.append({
+                        "Path (Dosya)": file.name,
+                        "Hacim (Å³)": round(V_ang, 2),
+                        "Ea (eV)": Ea,
+                        "a0 (Å)": a0,
+                        "D (cm²/s)": f"{D:.3e}",
+                        "Sigma (S/cm)": f"{sigma:.3e}"
+                    })
+                    plot_data.append({"name": file.name, "x": [0.0, loc, 1.0], "y": [0.0, Ea, E_rxn]})
+                else:
+                    st.error("⚠️ LST/QST verisi okunamadı! .castep dosyanızın başarıyla tamamlandığından emin olun.")
+            st.markdown("---")
 
-    # 3. SONUÇLAR VE Q1 GRAFİK ÇİZİMİ
-    if results:
-        st.subheader("📊 Analiz Sonuçları")
-        st.dataframe(pd.DataFrame(results), use_container_width=True)
+# 3. SONUÇLAR VE Q1 GRAFİK ÇİZİMİ
+if results:
+    st.subheader("📊 Analiz Sonuçları")
+    st.dataframe(pd.DataFrame(results), use_container_width=True)
+    
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Makaleler için profesyonel renk paleti
+    colors = ['#E64B35', '#4DBBD5', '#00A087', '#3C5488', '#F39B7F', '#8491B4']
+    
+    for i, path in enumerate(plot_data):
+        x = np.array(path["x"])
+        y = np.array(path["y"])
+        color = colors[i % len(colors)]
         
-        fig, ax = plt.subplots(figsize=(8, 6))
+        # PCHIP İle Pürüzsüzleştirme (Tepe noktası taşmasını sıfıra indirir)
+        interpolator = PchipInterpolator(x, y)
+        x_smooth = np.linspace(0, 1, 500)
+        y_smooth = interpolator(x_smooth)
         
-        # Makaleler için profesyonel renk paleti
-        colors = ['#E64B35', '#4DBBD5', '#00A087', '#3C5488', '#F39B7F', '#8491B4']
+        # Ana Eğri
+        ax.plot(x_smooth, y_smooth, label=f"{path['name']} ($E_a$ = {y[1]:.3f} eV)", linewidth=2.5, color=color)
         
-        for i, path in enumerate(plot_data):
-            x = np.array(path["x"])
-            y = np.array(path["y"])
-            color = colors[i % len(colors)]
-            
-            # PCHIP İle Pürüzsüzleştirme (Tepe noktası taşmasını sıfıra indirir)
-            interpolator = PchipInterpolator(x, y)
-            x_smooth = np.linspace(0, 1, 500)
-            y_smooth = interpolator(x_smooth)
-            
-            # Ana Eğri
-            ax.plot(x_smooth, y_smooth, label=f"{path['name']} ($E_a$ = {y[1]:.3f} eV)", linewidth=2.5, color=color)
-            
-            # Başlangıç ve Bitiş Noktaları (Dolu Yuvarlaklar)
-            ax.scatter([x[0], x[2]], [y[0], y[2]], s=80, color=color, zorder=5, edgecolor='black', linewidth=1)
-            
-            # Transition State (TS) Tepe Noktası (Büyük Yıldız)
-            ax.scatter(x[1], y[1], marker="*", s=250, color=color, zorder=6, edgecolor='black', linewidth=1)
+        # Başlangıç ve Bitiş Noktaları (Dolu Yuvarlaklar)
+        ax.scatter([x[0], x[2]], [y[0], y[2]], s=80, color=color, zorder=5, edgecolor='black', linewidth=1)
+        
+        # Transition State (TS) Tepe Noktası (Büyük Yıldız)
+        ax.scatter(x[1], y[1], marker="*", s=250, color=color, zorder=6, edgecolor='black', linewidth=1)
 
-        # Q1 Eksen ve Grid Ayarları
-        ax.set_xlabel("Reaction Coordinate", fontweight='bold')
-        ax.set_ylabel("Relative Energy (eV)", fontweight='bold')
-        ax.set_xlim(-0.05, 1.05)
-        
-        # Sıfır Referans Çizgisi
-        ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.5, zorder=1)
-        
-        # Sadece yatay hafif kılavuz çizgileri
-        ax.yaxis.grid(True, linestyle='-', alpha=0.15)
-        ax.xaxis.grid(False)
-        ax.legend(loc="best")
-        
-        st.pyplot(fig)
+    # Q1 Eksen ve Grid Ayarları
+    ax.set_xlabel("Reaction Coordinate", fontweight='bold')
+    ax.set_ylabel("Relative Energy (eV)", fontweight='bold')
+    ax.set_xlim(-0.05, 1.05)
+    
+    # Sıfır Referans Çizgisi
+    ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.5, zorder=1)
+    
+    # Sadece yatay hafif kılavuz çizgileri
+    ax.yaxis.grid(True, linestyle='-', alpha=0.15)
+    ax.xaxis.grid(False)
+    ax.legend(loc="best")
+    
+    st.pyplot(fig)
