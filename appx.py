@@ -191,6 +191,7 @@ menuler = {
         "⛰️ NEB Enerji Bariyeri (Energy Profile)",
         "📍 Çoklu Sıcaklık VDoS (Overlay)",
         "🧱 Elastik Özellikler ve Modüller",
+        "🔋 CASTEP Kinetik Analiz"
     ],
     "🤖 Otonom NEB ve Difüzyon": [
         "📌 NEB Master İş Akışı",
@@ -8484,3 +8485,114 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
                           data=buf.getvalue(), 
                           file_name="DOS_PDOS_Origin.png", 
                           mime="image/png")
+# ==========================================
+# MODÜL 3: CASTEP LST/QST ANALİZİ
+# ==========================================
+elif secim == "🔋 CASTEP Kinetik Analiz":
+    st.header("🔋 CASTEP LST/QST Kinetik Analizörü")
+    st.markdown("Farklı difüzyon yolları (pathways) için .castep çıktılarını analiz edin, aktivasyon enerjisi, difüzyon katsayısı ve iyonik iletkenlik hesaplamalarını yapın.")
+    st.markdown("---")
+
+    # SABİTLER
+    K_B_EV = 8.617333262e-5  # eV/K
+    K_B_J = 1.380649e-23     # J/K
+    E_CHARGE = 1.602176634e-19 # Coulomb
+
+    # 1. GLOBAL PARAMETRELER (Expander içinde gizli, arayüzü yormaması için)
+    with st.expander("⚙️ Global Termodinamik Parametreleri Ayarla", expanded=True):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            T = st.number_input("Sıcaklık (T) [Kelvin]", value=300.0, step=10.0)
+            N_ions = st.number_input("Mobil İyon Sayısı (N)", value=1, step=1)
+        with col2:
+            V_ang = st.number_input("Supercell Hacmi (V) [Å³]", value=990.06, step=10.0)
+            Z_ion = st.number_input("İyon Yükü (Z)", value=1, step=1)
+        with col3:
+            v0 = st.number_input("Deneme Frekansı (v0) [Hz]", value=1.0e13, format="%e")
+
+    # Konsantrasyon (cH) Hesabı
+    c_H = N_ions / (V_ang * 1e-24)
+
+    # 2. DOSYA YÜKLEME ALANI
+    st.subheader("📂 CASTEP Dosyalarını Yükle")
+    uploaded_files = st.file_uploader("Her difüzyon yolu (path) için .castep dosyalarınızı seçin", type=["castep"], accept_multiple_files=True)
+
+    results = []
+    plot_data = []
+
+    if uploaded_files:
+        st.markdown("---")
+        st.subheader("📏 Yola Özgü (Pathway) Parametreler")
+        st.info("Her bir difüzyon yolu için Materials Studio'dan ölçtüğünüz sıçrama mesafesini (a0) aşağıya ayrı ayrı giriniz.")
+        
+        # Yüklenen her dosya için ayrı bir kutucuk oluştur (Her yolun a0 değeri farklı girilebilsin diye)
+        for idx, file in enumerate(uploaded_files):
+            with st.container():
+                col_a, col_b = st.columns([1, 2])
+                
+                with col_a:
+                    st.markdown(f"**Dosya:** `{file.name}`")
+                    # Her dosyaya özel dinamik a0 girişi (key=f"a0_{idx}" sayesinde karışmaz)
+                    a0 = st.number_input(f"a0 Sıçrama Mes. [Å]", value=2.52, step=0.05, key=f"a0_{idx}")
+                
+                with col_b:
+                    content = file.read().decode("utf-8")
+                    parsed_data = parse_castep(content)
+                    
+                    if parsed_data:
+                        Ea = parsed_data['barrier']
+                        loc = parsed_data['location']
+                        E_rxn = parsed_data['reaction_e']
+                        
+                        # Kinetik Hesaplamalar
+                        D = ((a0 * 1e-8)**2) * v0 * np.exp(-Ea / (K_B_EV * T))
+                        sigma = (c_H * (Z_ion * E_CHARGE)**2 * D) / (K_B_J * T)
+                        
+                        st.success(f"✅ Ea: **{Ea} eV** | TS Konumu: **{loc}**")
+                        
+                        # Tablo için verileri topla
+                        results.append({
+                            "Path (Dosya)": file.name,
+                            "Ea (eV)": Ea,
+                            "a0 (Å)": a0,
+                            "Difüzyon K. (cm²/s)": f"{D:.3e}",
+                            "İletkenlik (S/cm)": f"{sigma:.3e}"
+                        })
+                        
+                        # Çizim için verileri topla
+                        plot_data.append({"name": file.name, "x": [0.0, loc, 1.0], "y": [0.0, Ea, E_rxn]})
+                    else:
+                        st.error("⚠️ LST/QST geçiş hali verisi okunamadı!")
+                st.markdown("---")
+
+    # 3. GRAFİK VE TABLO ÇIKTISI
+    if results:
+        st.subheader("📊 Analiz Sonuçları")
+        
+        # Sonuç Tablosu
+        df_results = pd.DataFrame(results)
+        st.dataframe(df_results, use_container_width=True)
+        
+        # Reaksiyon Yolu Grafiği
+        st.subheader("Aktivasyon Enerjisi Bariyerleri")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        
+        for path in plot_data:
+            # Pürüzsüzleştirme işlemi (Makale formatı spline)
+            x_smooth = np.linspace(0, 1, 300)
+            spline = make_interp_spline(path["x"], path["y"], k=2) 
+            y_smooth = spline(x_smooth)
+            
+            # Çizgiyi ve tepe noktasını çiz
+            line, = ax.plot(x_smooth, y_smooth, label=f"{path['name']} (Ea={path['y'][1]} eV)", linewidth=2.5)
+            ax.plot(path["x"][1], path["y"][1], marker="*", markersize=12, color=line.get_color())
+        
+        # Grafik Ayarları
+        ax.set_title("CASTEP Geçiş Hali (Transition State) Araması", fontsize=14, fontweight="bold")
+        ax.set_xlabel("Reaksiyon Koordinatı", fontsize=12)
+        ax.set_ylabel("Bağıl Enerji (eV)", fontsize=12)
+        ax.set_xlim(0, 1)
+        ax.grid(True, linestyle="--", alpha=0.6)
+        ax.legend(loc="upper right")
+        
+        st.pyplot(fig)
