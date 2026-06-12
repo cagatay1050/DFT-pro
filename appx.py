@@ -8496,7 +8496,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
     from scipy.interpolate import PchipInterpolator
     import re
 
-    # --- Q1 MAKALE GRAFİK STANDARTLARI (rcParams) ---
+    # --- Q1 MAKALE GRAFİK STANDARTLARI (Nature/Science Stili) ---
     mpl.rcParams['font.family'] = 'sans-serif'
     mpl.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'DejaVu Sans']
     mpl.rcParams['axes.linewidth'] = 1.5
@@ -8511,37 +8511,41 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
     mpl.rcParams['legend.frameon'] = False
     mpl.rcParams['figure.dpi'] = 300
 
+    # --- OTOMATİK VERİ ÇEKME FONKSİYONU (GÜNCELLENDİ) ---
     def parse_castep(content):
         data = {}
         try:
             data['barrier'] = float(re.search(r"Barrier from reactant:\s+([\d\.]+)\s+eV", content).group(1))
             data['location'] = float(re.search(r"Location of transition state:\s+([\d\.]+)", content).group(1))
             data['reaction_e'] = float(re.search(r"Energy of reaction:\s+([\-\d\.]+)\s+eV", content).group(1))
+            # Hacmi (.castep içinden) otomatik okur
+            volume_match = re.search(r"Current cell volume =\s+([\d\.]+)\s+A\*\*3", content)
+            data['volume'] = float(volume_match.group(1)) if volume_match else 990.06
             return data
         except AttributeError:
             return None
 
     st.header("🔋 CASTEP LST/QST Kinetik Analizörü")
-    st.markdown("Q1 Makale standartlarında difüzyon bariyeri grafikleri ve termodinamik hesaplamalar.")
+    st.markdown("`.castep` dosyalarından enerji ve hacim verilerini otomatik çeker, Q1 makale standartlarında difüzyon bariyeri grafikleri ve termodinamik hesaplamalar üretir.")
     st.markdown("---")
 
+    # FİZİKSEL SABİTLER
     K_B_EV = 8.617333262e-5  
     K_B_J = 1.380649e-23     
     E_CHARGE = 1.602176634e-19 
 
-    with st.expander("⚙️ Global Termodinamik Parametreleri Ayarla", expanded=True):
+    # 1. GLOBAL PARAMETRELER (Hacim artık dosyadan geliyor, menüden kaldırdık)
+    with st.expander("⚙️ Termodinamik Parametreleri Ayarla (D ve Sigma İçin)", expanded=True):
         col1, col2, col3 = st.columns(3)
         with col1:
             T = st.number_input("Sıcaklık (T) [Kelvin]", value=300.0, step=10.0)
-            N_ions = st.number_input("Mobil İyon Sayısı (N)", value=1, step=1)
         with col2:
-            V_ang = st.number_input("Supercell Hacmi (V) [Å³]", value=990.06, step=10.0)
-            Z_ion = st.number_input("İyon Yükü (Z)", value=1, step=1)
+            N_ions = st.number_input("Mobil İyon Sayısı (N)", value=1, step=1)
+            Z_ion = st.number_input("İyon Yükü (Z) (H=1)", value=1, step=1)
         with col3:
             v0 = st.number_input("Deneme Frekansı (v0) [Hz]", value=1.0e13, format="%e")
 
-    c_H = N_ions / (V_ang * 1e-24)
-
+    # 2. DOSYA YÜKLEME ALANI
     st.subheader("📂 CASTEP Dosyalarını Yükle")
     uploaded_files = st.file_uploader("LST/QST çıktı (.castep) dosyalarını seçin", type=["castep"], accept_multiple_files=True)
 
@@ -8550,7 +8554,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
 
     if uploaded_files:
         st.markdown("---")
-        st.info("Her bir difüzyon yolu için sıçrama mesafesini (a0) aşağıya giriniz.")
+        st.info("Her bir difüzyon yolu için 3 boyutlu modelden ölçtüğünüz sıçrama mesafesini (a0) aşağıya giriniz.")
         
         for idx, file in enumerate(uploaded_files):
             with st.container():
@@ -8568,14 +8572,20 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
                         Ea = parsed_data['barrier']
                         loc = parsed_data['location']
                         E_rxn = parsed_data['reaction_e']
+                        V_ang = parsed_data['volume']
                         
+                        # Dosyadan okunan hacme göre Konsantrasyon (cH) hesabı
+                        c_H = N_ions / (V_ang * 1e-24)
+                        
+                        # Kinetik Hesaplamalar
                         D = ((a0 * 1e-8)**2) * v0 * np.exp(-Ea / (K_B_EV * T))
                         sigma = (c_H * (Z_ion * E_CHARGE)**2 * D) / (K_B_J * T)
                         
-                        st.success(f"✅ Ea: **{Ea} eV** | TS: **{loc}** | $\\Delta E$: **{E_rxn} eV**")
+                        st.success(f"✅ Okunan Veriler -> **Ea:** {Ea} eV | **Hacim:** {V_ang:.2f} Å³ | **TS Konumu:** {loc}")
                         
                         results.append({
                             "Path (Dosya)": file.name,
+                            "Hacim (Å³)": round(V_ang, 2),
                             "Ea (eV)": Ea,
                             "a0 (Å)": a0,
                             "D (cm²/s)": f"{D:.3e}",
@@ -8583,17 +8593,17 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
                         })
                         plot_data.append({"name": file.name, "x": [0.0, loc, 1.0], "y": [0.0, Ea, E_rxn]})
                     else:
-                        st.error("⚠️ LST/QST verisi okunamadı!")
+                        st.error("⚠️ LST/QST verisi okunamadı! .castep dosyanızı kontrol edin.")
                 st.markdown("---")
 
+    # 3. SONUÇLAR VE Q1 GRAFİK ÇİZİMİ
     if results:
         st.subheader("📊 Analiz Sonuçları")
         st.dataframe(pd.DataFrame(results), use_container_width=True)
         
-        # --- Q1 STANDARTLARINDA GRAFİK ÇİZİMİ ---
         fig, ax = plt.subplots(figsize=(8, 6))
         
-        # Nature/Science stili profesyonel renk paleti
+        # Makaleler için profesyonel renk paleti
         colors = ['#E64B35', '#4DBBD5', '#00A087', '#3C5488', '#F39B7F', '#8491B4']
         
         for i, path in enumerate(plot_data):
@@ -8601,33 +8611,27 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             y = np.array(path["y"])
             color = colors[i % len(colors)]
             
-            # PCHIP Interpolation: Tepe noktasını (TS) kesinlikle aşmaz, fiziksel olarak en doğru eğriyi verir.
+            # PCHIP: Tepe noktasını asla aşmaz, fiziksel gerçeğe en uygun spline.
             interpolator = PchipInterpolator(x, y)
             x_smooth = np.linspace(0, 1, 500)
             y_smooth = interpolator(x_smooth)
             
-            # Eğri
+            # Çizgi
             ax.plot(x_smooth, y_smooth, label=f"{path['name']} ($E_a$ = {y[1]:.3f} eV)", linewidth=2.5, color=color)
             
-            # Başlangıç ve Bitiş (Dolu daireler)
+            # Başlangıç ve Bitiş Noktaları
             ax.scatter([x[0], x[2]], [y[0], y[2]], s=80, color=color, zorder=5, edgecolor='black', linewidth=1)
             
-            # TS Noktası (Büyük Yıldız)
+            # Transition State (TS) Tepe Noktası Yıldızı
             ax.scatter(x[1], y[1], marker="*", s=250, color=color, zorder=6, edgecolor='black', linewidth=1)
 
-        # Eksen Formatları
+        # Q1 Eksen ve Grid Ayarları
         ax.set_xlabel("Reaction Coordinate", fontweight='bold')
         ax.set_ylabel("Relative Energy (eV)", fontweight='bold')
-        
-        # Sınırlar ve Sıfır Çizgisi
         ax.set_xlim(-0.05, 1.05)
         ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.5, zorder=1)
-        
-        # Sadece y ekseninde çok hafif bir kılavuz çizgi (İsteğe bağlı, Q1'de şık durur)
         ax.yaxis.grid(True, linestyle='-', alpha=0.15)
         ax.xaxis.grid(False)
-        
-        # Legend (Çerçevesiz, iç kısımda)
         ax.legend(loc="best")
         
         st.pyplot(fig)
