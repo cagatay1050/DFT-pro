@@ -8489,12 +8489,27 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
 # MODÜL: CASTEP LST/QST KİNETİK ANALİZ
 # ==========================================
 elif secim == "🔋 CASTEP Kinetik Analiz":
-    # Kütüphaneleri ve Fonksiyonu modül içine alıyoruz (NameError hatasını kesin önler)
     import pandas as pd
     import numpy as np
     import matplotlib.pyplot as plt
-    from scipy.interpolate import make_interp_spline
+    import matplotlib as mpl
+    from scipy.interpolate import PchipInterpolator
     import re
+
+    # --- Q1 MAKALE GRAFİK STANDARTLARI (rcParams) ---
+    mpl.rcParams['font.family'] = 'sans-serif'
+    mpl.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'DejaVu Sans']
+    mpl.rcParams['axes.linewidth'] = 1.5
+    mpl.rcParams['xtick.major.width'] = 1.5
+    mpl.rcParams['ytick.major.width'] = 1.5
+    mpl.rcParams['xtick.direction'] = 'in'
+    mpl.rcParams['ytick.direction'] = 'in'
+    mpl.rcParams['xtick.labelsize'] = 12
+    mpl.rcParams['ytick.labelsize'] = 12
+    mpl.rcParams['axes.labelsize'] = 14
+    mpl.rcParams['legend.fontsize'] = 11
+    mpl.rcParams['legend.frameon'] = False
+    mpl.rcParams['figure.dpi'] = 300
 
     def parse_castep(content):
         data = {}
@@ -8506,17 +8521,14 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         except AttributeError:
             return None
 
-    # --- ARAYÜZ VE HESAPLAMALAR ---
     st.header("🔋 CASTEP LST/QST Kinetik Analizörü")
-    st.markdown("Farklı difüzyon yolları (pathways) için `.castep` çıktılarını analiz edin, aktivasyon enerjisi, difüzyon katsayısı ve iyonik iletkenlik hesaplamalarını otomatik yapın.")
+    st.markdown("Q1 Makale standartlarında difüzyon bariyeri grafikleri ve termodinamik hesaplamalar.")
     st.markdown("---")
 
-    # SABİTLER
-    K_B_EV = 8.617333262e-5  # eV/K (Aktivasyon Enerjisi için)
-    K_B_J = 1.380649e-23     # J/K (İletkenlik için)
-    E_CHARGE = 1.602176634e-19 # Coulomb (Elektron yükü)
+    K_B_EV = 8.617333262e-5  
+    K_B_J = 1.380649e-23     
+    E_CHARGE = 1.602176634e-19 
 
-    # 1. GLOBAL PARAMETRELER
     with st.expander("⚙️ Global Termodinamik Parametreleri Ayarla", expanded=True):
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -8524,24 +8536,21 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             N_ions = st.number_input("Mobil İyon Sayısı (N)", value=1, step=1)
         with col2:
             V_ang = st.number_input("Supercell Hacmi (V) [Å³]", value=990.06, step=10.0)
-            Z_ion = st.number_input("İyon Yükü (Z) (H için 1)", value=1, step=1)
+            Z_ion = st.number_input("İyon Yükü (Z)", value=1, step=1)
         with col3:
             v0 = st.number_input("Deneme Frekansı (v0) [Hz]", value=1.0e13, format="%e")
 
-    # Konsantrasyon (cH) Hesabı -> [iyon / cm³]
     c_H = N_ions / (V_ang * 1e-24)
 
-    # 2. DOSYA YÜKLEME ALANI
     st.subheader("📂 CASTEP Dosyalarını Yükle")
-    uploaded_files = st.file_uploader("Her difüzyon yolu (path) için .castep dosyalarınızı seçin", type=["castep"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("LST/QST çıktı (.castep) dosyalarını seçin", type=["castep"], accept_multiple_files=True)
 
     results = []
     plot_data = []
 
     if uploaded_files:
         st.markdown("---")
-        st.subheader("📏 Yola Özgü (Pathway) Parametreler")
-        st.info("Her bir difüzyon yolu için Materials Studio'dan ölçtüğünüz sıçrama mesafesini (a0) aşağıya ayrı ayrı giriniz.")
+        st.info("Her bir difüzyon yolu için sıçrama mesafesini (a0) aşağıya giriniz.")
         
         for idx, file in enumerate(uploaded_files):
             with st.container():
@@ -8549,8 +8558,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
                 
                 with col_a:
                     st.markdown(f"**Dosya:** `{file.name}`")
-                    # Her path için ayrı a0 değeri girişi
-                    a0 = st.number_input(f"a0 Sıçrama Mes. [Å]", value=2.52, step=0.05, key=f"a0_{idx}")
+                    a0 = st.number_input(f"a0 (Å)", value=2.52, step=0.05, key=f"a0_{idx}")
                 
                 with col_b:
                     content = file.read().decode("utf-8")
@@ -8561,57 +8569,65 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
                         loc = parsed_data['location']
                         E_rxn = parsed_data['reaction_e']
                         
-                        # Kinetik Hesaplamalar
                         D = ((a0 * 1e-8)**2) * v0 * np.exp(-Ea / (K_B_EV * T))
                         sigma = (c_H * (Z_ion * E_CHARGE)**2 * D) / (K_B_J * T)
                         
-                        st.success(f"✅ Ea: **{Ea} eV** | TS Konumu: **{loc}** | Rxn Enerjisi: **{E_rxn} eV**")
+                        st.success(f"✅ Ea: **{Ea} eV** | TS: **{loc}** | $\\Delta E$: **{E_rxn} eV**")
                         
-                        # Tablo Verileri
                         results.append({
                             "Path (Dosya)": file.name,
                             "Ea (eV)": Ea,
                             "a0 (Å)": a0,
-                            "Difüzyon K. (cm²/s)": f"{D:.3e}",
-                            "İletkenlik (S/cm)": f"{sigma:.3e}"
+                            "D (cm²/s)": f"{D:.3e}",
+                            "Sigma (S/cm)": f"{sigma:.3e}"
                         })
-                        
-                        # Grafik Verileri
                         plot_data.append({"name": file.name, "x": [0.0, loc, 1.0], "y": [0.0, Ea, E_rxn]})
                     else:
-                        st.error("⚠️ LST/QST geçiş hali verisi okunamadı! Seçilen dosyanın bir TS Search çıktısı olduğundan emin olun.")
+                        st.error("⚠️ LST/QST verisi okunamadı!")
                 st.markdown("---")
 
-    # 3. GRAFİK VE TABLO ÇIKTISI
     if results:
-        st.subheader("📊 Analiz Sonuçları ve Kinetik Değerler")
+        st.subheader("📊 Analiz Sonuçları")
+        st.dataframe(pd.DataFrame(results), use_container_width=True)
         
-        # DataFrame Tablosu
-        df_results = pd.DataFrame(results)
-        st.dataframe(df_results, use_container_width=True)
+        # --- Q1 STANDARTLARINDA GRAFİK ÇİZİMİ ---
+        fig, ax = plt.subplots(figsize=(8, 6))
         
-        # Aktivasyon Enerjisi Grafiği
-        st.subheader("Aktivasyon Enerjisi Bariyerleri (Reaksiyon Yolu)")
-        fig, ax = plt.subplots(figsize=(10, 5))
+        # Nature/Science stili profesyonel renk paleti
+        colors = ['#E64B35', '#4DBBD5', '#00A087', '#3C5488', '#F39B7F', '#8491B4']
         
-        for path in plot_data:
-            # Pürüzsüzleştirme (Spline)
-            x_points = np.array(path["x"])
-            y_points = np.array(path["y"])
+        for i, path in enumerate(plot_data):
+            x = np.array(path["x"])
+            y = np.array(path["y"])
+            color = colors[i % len(colors)]
             
-            x_smooth = np.linspace(0, 1, 300)
-            spline = make_interp_spline(x_points, y_points, k=2) 
-            y_smooth = spline(x_smooth)
+            # PCHIP Interpolation: Tepe noktasını (TS) kesinlikle aşmaz, fiziksel olarak en doğru eğriyi verir.
+            interpolator = PchipInterpolator(x, y)
+            x_smooth = np.linspace(0, 1, 500)
+            y_smooth = interpolator(x_smooth)
             
-            # Eğriyi ve TS noktasını çiz
-            line, = ax.plot(x_smooth, y_smooth, label=f"{path['name']} (Ea={path['y'][1]} eV)", linewidth=2.5)
-            ax.plot(x_points[1], y_points[1], marker="*", markersize=14, color=line.get_color())
+            # Eğri
+            ax.plot(x_smooth, y_smooth, label=f"{path['name']} ($E_a$ = {y[1]:.3f} eV)", linewidth=2.5, color=color)
+            
+            # Başlangıç ve Bitiş (Dolu daireler)
+            ax.scatter([x[0], x[2]], [y[0], y[2]], s=80, color=color, zorder=5, edgecolor='black', linewidth=1)
+            
+            # TS Noktası (Büyük Yıldız)
+            ax.scatter(x[1], y[1], marker="*", s=250, color=color, zorder=6, edgecolor='black', linewidth=1)
+
+        # Eksen Formatları
+        ax.set_xlabel("Reaction Coordinate", fontweight='bold')
+        ax.set_ylabel("Relative Energy (eV)", fontweight='bold')
         
-        ax.set_title("Makale Formatında Difüzyon Bariyeri Eğrileri", fontsize=14, fontweight="bold")
-        ax.set_xlabel("Reaksiyon Koordinatı (Pathway)", fontsize=12)
-        ax.set_ylabel("Bağıl Enerji (eV)", fontsize=12)
-        ax.set_xlim(0, 1)
-        ax.grid(True, linestyle="--", alpha=0.6)
-        ax.legend(loc="upper right")
+        # Sınırlar ve Sıfır Çizgisi
+        ax.set_xlim(-0.05, 1.05)
+        ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.5, zorder=1)
+        
+        # Sadece y ekseninde çok hafif bir kılavuz çizgi (İsteğe bağlı, Q1'de şık durur)
+        ax.yaxis.grid(True, linestyle='-', alpha=0.15)
+        ax.xaxis.grid(False)
+        
+        # Legend (Çerçevesiz, iç kısımda)
+        ax.legend(loc="best")
         
         st.pyplot(fig)
