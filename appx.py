@@ -8496,6 +8496,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
     from matplotlib.ticker import MultipleLocator
     from scipy.interpolate import PchipInterpolator
     import re
+    import io  # 600 DPI indirme tamponu için gerekli kütüphane
 
     # --- OTOMATİK VERİ ÇEKME FONKSİYONU ---
     def parse_castep(content):
@@ -8549,15 +8550,18 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             x_maj = c3.number_input("X Major Tick Aralığı", value=0.2, step=0.1)
             y_maj = c4.number_input("Y Major Tick Aralığı", value=0.2, step=0.1)
             
-            # MESAFE VE HİZALAMA AYAR KUTULARI (YENİ)
             st.markdown("**Mesafe ve Konum Ayarları (Padding)**")
             p1, p2 = st.columns(2)
-            x_label_pad = p1.number_input("X Eksen Çizgisi - Etiket Mesafesi", value=10.0, step=1.0)
-            y_label_pad = p2.number_input("Y Eksen Çizgisi - Etiket Mesafesi", value=10.0, step=1.0)
+            x_label_pad = p1.number_input("X Eksen Başlığı Mesafesi", value=15.0, step=1.0)
+            y_label_pad = p2.number_input("Y Eksen Başlığı Mesafesi", value=15.0, step=1.0)
+            
+            p5, p6 = st.columns(2)
+            x_tick_pad = p5.number_input("X Sayıları Çizgi Mesafesi", value=8.0, step=1.0)
+            y_tick_pad = p6.number_input("Y Sayıları Çizgi Mesafesi", value=5.0, step=1.0)
             
             p3, p4 = st.columns(2)
-            mat_x = p3.number_input("Malzeme Başlığı X Konumu", value=0.05, step=0.01, help="Grafik içi yatay konum (0-1 arası)")
-            mat_y = p4.number_input("Malzeme Başlığı Y Konumu", value=0.95, step=0.01, help="Grafik içi dikey konum (0-1 arası)")
+            mat_x = p3.number_input("Malzeme Başlığı X Konumu", value=0.05, step=0.01)
+            mat_y = p4.number_input("Malzeme Başlığı Y Konumu", value=0.95, step=0.01)
             
             st.markdown("**Çizgi ve Font Kalınlıkları**")
             c5, c6 = st.columns(2)
@@ -8629,7 +8633,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         # --- MATPLOTLIB Q1 TIMES NEW ROMAN AYARLARI ---
         mpl.rcParams['font.family'] = 'serif'
         mpl.rcParams['font.serif'] = ['Times New Roman', 'DejaVu Serif']
-        mpl.rcParams['mathtext.fontset'] = 'stix'  # Formüllerin Times New Roman karakter yapısında basılması için kritik ayar
+        mpl.rcParams['mathtext.fontset'] = 'stix'
         mpl.rcParams['axes.linewidth'] = ax_thick
         
         fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi_val)
@@ -8655,21 +8659,34 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         ax.xaxis.set_minor_locator(MultipleLocator(x_maj / 2))
         ax.yaxis.set_minor_locator(MultipleLocator(y_maj / 2))
         
-        ax.tick_params(axis='both', which='major', direction='in', length=6, width=ax_thick, labelsize=font_size-2, top=False, right=False)
+        ax.tick_params(axis='x', which='major', direction='in', length=6, width=ax_thick, labelsize=font_size-2, top=False, right=False, pad=x_tick_pad)
+        ax.tick_params(axis='y', which='major', direction='in', length=6, width=ax_thick, labelsize=font_size-2, top=False, right=False, pad=y_tick_pad)
         ax.tick_params(axis='both', which='minor', direction='in', length=3, width=ax_thick*0.8, top=False, right=False)
 
-        # Malzeme Adı (Kutudan gelen mat_x ve mat_y koordinatlarına göre Times New Roman basar)
+        # Malzeme Adı (Times New Roman)
         ax.text(mat_x, mat_y, mat_name, transform=ax.transAxes, fontsize=font_size+2, fontweight='bold', va='top', ha='left', fontname='Times New Roman')
         
-        # Eksen İsimleri (Ayar kutularından gelen labelpad mesafeleri uygulandı)
+        # Eksen İsimleri
         ax.set_xlabel("Pathway", fontsize=font_size, fontweight='bold', labelpad=x_label_pad, fontname='Times New Roman')
         ax.set_ylabel("Energy (eV)", fontsize=font_size, fontweight='bold', labelpad=y_label_pad, fontname='Times New Roman')
         
+        # Grafik Elemanları
         ax.axhline(0, color='black', linestyle='--', linewidth=ax_thick*0.6, alpha=0.6, zorder=1)
-        ax.yaxis.grid(True, linestyle='-', alpha=0.15)
-        ax.xaxis.grid(False)
-        
-        # Legend Ayarı
+        ax.grid(False) 
         ax.legend(loc="upper right", frameon=False, fontsize=font_size-2)
         
+        # 1. Grafiği Streamlit Ekranına Standart Çiz
         st.pyplot(fig)
+
+        # 2. Arka Planda Gerçek 600 DPI Bellek Tamponu Oluştur (YENİ)
+        fn_buf = io.BytesIO()
+        fig.savefig(fn_buf, format="png", dpi=dpi_val, bbox_inches='tight')
+        fn_buf.seek(0)
+        
+        # 3. İndirme Butonunu Ekrana Bas (YENİ)
+        st.download_button(
+            label="💾 Grafiği 600 DPI PNG Olarak İndir",
+            data=fn_buf,
+            file_name=f"{mat_name.replace('$', '').replace('_', '')}_diffusion_barrier.png",
+            mime="image/png"
+        )
