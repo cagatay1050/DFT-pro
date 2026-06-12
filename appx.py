@@ -8524,7 +8524,54 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             return data
         except AttributeError:
             return None
+# ==========================================
+# MODÜL: CASTEP LST/QST KİNETİK ANALİZ
+# ==========================================
+elif secim == "🔋 CASTEP Kinetik Analiz":
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    from scipy.interpolate import PchipInterpolator
+    import re
 
+    # --- Q1 MAKALE GRAFİK STANDARTLARI (Nature/Science Stili) ---
+    mpl.rcParams['font.family'] = 'sans-serif'
+    mpl.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'DejaVu Sans']
+    mpl.rcParams['axes.linewidth'] = 1.5
+    mpl.rcParams['xtick.major.width'] = 1.5
+    mpl.rcParams['ytick.major.width'] = 1.5
+    mpl.rcParams['xtick.direction'] = 'in'
+    mpl.rcParams['ytick.direction'] = 'in'
+    mpl.rcParams['xtick.labelsize'] = 12
+    mpl.rcParams['ytick.labelsize'] = 12
+    mpl.rcParams['axes.labelsize'] = 14
+    mpl.rcParams['legend.fontsize'] = 11
+    mpl.rcParams['legend.frameon'] = False
+    mpl.rcParams['figure.dpi'] = 300
+
+    # --- OTOMATİK VERİ ÇEKME FONKSİYONU ---
+    def parse_castep(content):
+        data = {}
+        try:
+            # re.findall ile tüm eşleşmeleri bulur, [-1] ile DOSYADAKİ EN SONUNCU (GERÇEK) değeri alır.
+            barriers = re.findall(r"Barrier from reactant:\s+([\d\.]+)\s+eV", content)
+            data['barrier'] = float(barriers[-1]) if barriers else None
+            
+            locations = re.findall(r"Location of transition state:\s+([\d\.]+)", content)
+            data['location'] = float(locations[-1]) if locations else 0.5
+            
+            reactions = re.findall(r"Energy of reaction:\s+([\-\d\.]+)\s+eV", content)
+            data['reaction_e'] = float(reactions[-1]) if reactions else None
+            
+            volumes = re.findall(r"Current cell volume =\s+([\d\.]+)\s+A\*\*3", content)
+            data['volume'] = float(volumes[-1]) if volumes else 990.06
+            
+            return data
+        except Exception as e:
+            return None
+
+    # --- ARAYÜZ ---
     st.header("🔋 CASTEP LST/QST Kinetik Analizörü")
     st.markdown("`.castep` dosyalarından enerji ve hacim verilerini otomatik çeker, Q1 makale standartlarında difüzyon bariyeri grafikleri ve termodinamik hesaplamalar üretir.")
     st.markdown("---")
@@ -8534,7 +8581,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
     K_B_J = 1.380649e-23     
     E_CHARGE = 1.602176634e-19 
 
-    # 1. GLOBAL PARAMETRELER (Hacim artık dosyadan geliyor, menüden kaldırdık)
+    # 1. GLOBAL PARAMETRELER
     with st.expander("⚙️ Termodinamik Parametreleri Ayarla (D ve Sigma İçin)", expanded=True):
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -8568,7 +8615,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
                     content = file.read().decode("utf-8")
                     parsed_data = parse_castep(content)
                     
-                    if parsed_data:
+                    if parsed_data and parsed_data['barrier'] is not None:
                         Ea = parsed_data['barrier']
                         loc = parsed_data['location']
                         E_rxn = parsed_data['reaction_e']
@@ -8593,7 +8640,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
                         })
                         plot_data.append({"name": file.name, "x": [0.0, loc, 1.0], "y": [0.0, Ea, E_rxn]})
                     else:
-                        st.error("⚠️ LST/QST verisi okunamadı! .castep dosyanızı kontrol edin.")
+                        st.error("⚠️ LST/QST verisi okunamadı! .castep dosyanızın başarıyla tamamlandığından emin olun.")
                 st.markdown("---")
 
     # 3. SONUÇLAR VE Q1 GRAFİK ÇİZİMİ
@@ -8611,25 +8658,29 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             y = np.array(path["y"])
             color = colors[i % len(colors)]
             
-            # PCHIP: Tepe noktasını asla aşmaz, fiziksel gerçeğe en uygun spline.
+            # PCHIP İle Pürüzsüzleştirme (Tepe noktası taşmasını sıfıra indirir)
             interpolator = PchipInterpolator(x, y)
             x_smooth = np.linspace(0, 1, 500)
             y_smooth = interpolator(x_smooth)
             
-            # Çizgi
+            # Ana Eğri
             ax.plot(x_smooth, y_smooth, label=f"{path['name']} ($E_a$ = {y[1]:.3f} eV)", linewidth=2.5, color=color)
             
-            # Başlangıç ve Bitiş Noktaları
+            # Başlangıç ve Bitiş Noktaları (Dolu Yuvarlaklar)
             ax.scatter([x[0], x[2]], [y[0], y[2]], s=80, color=color, zorder=5, edgecolor='black', linewidth=1)
             
-            # Transition State (TS) Tepe Noktası Yıldızı
+            # Transition State (TS) Tepe Noktası (Büyük Yıldız)
             ax.scatter(x[1], y[1], marker="*", s=250, color=color, zorder=6, edgecolor='black', linewidth=1)
 
         # Q1 Eksen ve Grid Ayarları
         ax.set_xlabel("Reaction Coordinate", fontweight='bold')
         ax.set_ylabel("Relative Energy (eV)", fontweight='bold')
         ax.set_xlim(-0.05, 1.05)
+        
+        # Sıfır Referans Çizgisi
         ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.5, zorder=1)
+        
+        # Sadece yatay hafif kılavuz çizgileri
         ax.yaxis.grid(True, linestyle='-', alpha=0.15)
         ax.xaxis.grid(False)
         ax.legend(loc="best")
