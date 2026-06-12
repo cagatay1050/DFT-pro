@@ -8519,7 +8519,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
 
     # --- ARAYÜZ ---
     st.header("🔋 Gelişmiş CASTEP Kinetik Analizörü (Çoklu Path)")
-    st.markdown("Birden fazla difüzyon yolunu (path) aynı grafikte birleştirin. Tamamen özelleştirilebilir Q1 makale kalitesinde (Times New Roman, 600 DPI) çıktılar alın.")
+    st.markdown("`.castep` dosyalarından enerji ve hacim verilerini otomatik çeker, Q1 makale standartlarında difüzyon bariyeri grafikleri ve termodinamik hesaplamalar üretir.")
     st.markdown("---")
 
     # FİZİKSEL SABİTLER
@@ -8538,8 +8538,8 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             v0 = st.number_input("Deneme Frekansı (v0) [Hz]", value=1.0e13, format="%e")
 
     with col_graph:
-        with st.expander("🎨 Grafik ve Eksen Ayarları", expanded=True):
-            mat_name = st.text_input("Malzeme Adı (Sol Üstte Yazar)", value="Sr$_2$ZnH$_6$")
+        with st.expander("🎨 Grafik ve Eksen Ayarları (Times New Roman)", expanded=True):
+            mat_name = st.text_input("Malzeme Adı Başlığı", value="Sr$_2$ZnH$_6$")
             
             c1, c2 = st.columns(2)
             y_min = c1.number_input("Y Ekseni Min (eV)", value=-0.1, step=0.1)
@@ -8549,6 +8549,17 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             x_maj = c3.number_input("X Major Tick Aralığı", value=0.2, step=0.1)
             y_maj = c4.number_input("Y Major Tick Aralığı", value=0.2, step=0.1)
             
+            # MESAFE VE HİZALAMA AYAR KUTULARI (YENİ)
+            st.markdown("**Mesafe ve Konum Ayarları (Padding)**")
+            p1, p2 = st.columns(2)
+            x_label_pad = p1.number_input("X Eksen Çizgisi - Etiket Mesafesi", value=10.0, step=1.0)
+            y_label_pad = p2.number_input("Y Eksen Çizgisi - Etiket Mesafesi", value=10.0, step=1.0)
+            
+            p3, p4 = st.columns(2)
+            mat_x = p3.number_input("Malzeme Başlığı X Konumu", value=0.05, step=0.01, help="Grafik içi yatay konum (0-1 arası)")
+            mat_y = p4.number_input("Malzeme Başlığı Y Konumu", value=0.95, step=0.01, help="Grafik içi dikey konum (0-1 arası)")
+            
+            st.markdown("**Çizgi ve Font Kalınlıkları**")
             c5, c6 = st.columns(2)
             ax_thick = c5.number_input("Eksen/Çizgi Kalınlığı", value=2.0, step=0.5)
             font_size = c6.number_input("Genel Font Büyüklüğü", value=14, step=1)
@@ -8562,7 +8573,6 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
     results = []
     plot_data = []
     
-    # Standart Renk Paleti
     default_colors = ['#E64B35', '#4DBBD5', '#00A087', '#3C5488', '#F39B7F']
 
     if uploaded_files:
@@ -8570,8 +8580,6 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         for idx, file in enumerate(uploaded_files):
             with st.container():
                 st.markdown(f"**Dosya:** `{file.name}`")
-                
-                # Her dosya için yan yana ayar kutucukları
                 col_a, col_b, col_c, col_d = st.columns([1.5, 1, 1, 2])
                 
                 with col_a:
@@ -8618,9 +8626,10 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         st.subheader("📊 Analiz Sonuçları")
         st.dataframe(pd.DataFrame(results), use_container_width=True)
         
-        # --- MATPLOTLIB Q1 AYARLARI ---
+        # --- MATPLOTLIB Q1 TIMES NEW ROMAN AYARLARI ---
         mpl.rcParams['font.family'] = 'serif'
         mpl.rcParams['font.serif'] = ['Times New Roman', 'DejaVu Serif']
+        mpl.rcParams['mathtext.fontset'] = 'stix'  # Formüllerin Times New Roman karakter yapısında basılması için kritik ayar
         mpl.rcParams['axes.linewidth'] = ax_thick
         
         fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi_val)
@@ -8631,12 +8640,10 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             c = path["color"]
             lbl = path['label']
             
-            # PCHIP Pürüzsüzleştirme
             interpolator = PchipInterpolator(x, y)
             x_smooth = np.linspace(0, 1, 500)
             y_smooth = interpolator(x_smooth)
             
-            # SADECE ÇİZGİ ÇİZİLİYOR
             ax.plot(x_smooth, y_smooth, label=lbl, linewidth=ax_thick, color=c)
 
         # --- EKSEN LİMİT VE TİCK AYARLARI ---
@@ -8648,19 +8655,21 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         ax.xaxis.set_minor_locator(MultipleLocator(x_maj / 2))
         ax.yaxis.set_minor_locator(MultipleLocator(y_maj / 2))
         
-        # Tick kalınlık ve yönleri (Sağ ve Üst KAPALI)
         ax.tick_params(axis='both', which='major', direction='in', length=6, width=ax_thick, labelsize=font_size-2, top=False, right=False)
         ax.tick_params(axis='both', which='minor', direction='in', length=3, width=ax_thick*0.8, top=False, right=False)
 
-        # Malzeme Adı (Sol Üst)
-        ax.text(0.05, 0.95, mat_name, transform=ax.transAxes, fontsize=font_size+2, fontweight='bold', va='top', ha='left')
+        # Malzeme Adı (Kutudan gelen mat_x ve mat_y koordinatlarına göre Times New Roman basar)
+        ax.text(mat_x, mat_y, mat_name, transform=ax.transAxes, fontsize=font_size+2, fontweight='bold', va='top', ha='left', fontname='Times New Roman')
         
-        # Eksen İsimleri ve Sıfır Çizgisi
-        ax.set_xlabel("Pathway", fontsize=font_size, fontweight='bold')
-        ax.set_ylabel("Energy (eV)", fontsize=font_size, fontweight='bold')
+        # Eksen İsimleri (Ayar kutularından gelen labelpad mesafeleri uygulandı)
+        ax.set_xlabel("Pathway", fontsize=font_size, fontweight='bold', labelpad=x_label_pad, fontname='Times New Roman')
+        ax.set_ylabel("Energy (eV)", fontsize=font_size, fontweight='bold', labelpad=y_label_pad, fontname='Times New Roman')
+        
         ax.axhline(0, color='black', linestyle='--', linewidth=ax_thick*0.6, alpha=0.6, zorder=1)
+        ax.yaxis.grid(True, linestyle='-', alpha=0.15)
+        ax.xaxis.grid(False)
         
-        # Legend (Sağ Üst, Çerçevesiz)
+        # Legend Ayarı
         ax.legend(loc="upper right", frameon=False, fontsize=font_size-2)
         
         st.pyplot(fig)
