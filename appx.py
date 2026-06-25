@@ -194,7 +194,7 @@ menuler = {
         "⛰️ NEB Enerji Bariyeri (Energy Profile)",
         "📍 Çoklu Sıcaklık VDoS (Overlay)",
         "🧱 Elastik Özellikler ve Modüller",
-        "🔋 CASTEP Kinetik Analiz"
+        "🔋 CASTEP Kinetik Analiz",
         "📈 Convex Hull Analizi"
     ],
     "🤖 Otonom NEB ve Difüzyon": [
