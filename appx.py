@@ -8691,7 +8691,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             file_name=f"{mat_name.replace('$', '').replace('_', '')}_diffusion_barrier.png",
             mime="image/png"
         )
-        import streamlit as st
+import streamlit as st
 import tempfile
 import matplotlib.pyplot as plt
 
