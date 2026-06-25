@@ -28,7 +28,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.ticker as ticker
 from matplotlib.ticker import MultipleLocator, AutoMinorLocator
-
+from pymatgen.ext.matproj import MPRester
+from pymatgen.io.vasp import Vasprun
+from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
+from pymatgen.entries.computed_entries import ComputedEntry
 # ==========================================
 # 4. MATEMATİK, FİT VE İSTATİSTİK (SciPy)
 # ==========================================
@@ -191,8 +194,8 @@ menuler = {
         "⛰️ NEB Enerji Bariyeri (Energy Profile)",
         "📍 Çoklu Sıcaklık VDoS (Overlay)",
         "🧱 Elastik Özellikler ve Modüller",
-        "🔋 CASTEP Kinetik Analiz",
-        "Convex Hull Analizi"
+        "🔋 CASTEP Kinetik Analiz"
+        "📈 Convex Hull Analizi"
     ],
     "🤖 Otonom NEB ve Difüzyon": [
         "📌 NEB Master İş Akışı",
@@ -8691,30 +8694,18 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             file_name=f"{mat_name.replace('$', '').replace('_', '')}_diffusion_barrier.png",
             mime="image/png"
         )
-import streamlit as st
-import tempfile
-import matplotlib.pyplot as plt
-
-# Gerekli pymatgen modülleri (Performans için sadece bu menü açıldığında import edilebilir)
-from pymatgen.ext.matproj import MPRester
-from pymatgen.io.vasp import Vasprun
-from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
-from pymatgen.entries.computed_entries import ComputedEntry
-
-# --- Sizin kodunuzdaki menü yapısı varsayımı ---
-# menu_secim = st.sidebar.selectbox("Menü", ["Giriş", "Convex Hull Analizi", "Diğer"])
-# if menu_secim == "Giriş":
-#     st.write("Ana sayfa")
-
-elif secim == "Convex Hull Analizi":
+# ==========================================
+# MODÜL 13: CONVEX HULL (FAZ KARARLILIĞI) ANALİZİ
+# ==========================================
+elif secim == "📈 Convex Hull Analizi":
     st.header("Otomatik Faz Kararlılığı (Convex Hull) Analizi")
     st.markdown("VASP `vasprun.xml` dosyanızı yükleyin. Sistem Materials Project veritabanına bağlanarak rakip fazları çekecek ve termodinamik kararlılığı hesaplayacaktır.")
 
     # API Anahtarı ve Dosya Yükleyici
-    api_key = st.text_input("Materials Project API Anahtarı", type="password", help="materialsproject.org adresinden ücretsiz alabilirsiniz.")
+    api_key = st.text_input("Materials Project API Anahtarı", type="password", help="materialsproject.org adresinden ücretsiz alabilirsiniz. (API v1 key)")
     uploaded_file = st.file_uploader("vasprun.xml dosyasını yükleyin", type=['xml'])
 
-    if st.button("Analizi Başlat"):
+    if st.button("🚀 Analizi Başlat", type="primary"):
         if not api_key or not uploaded_file:
             st.warning("Lütfen API anahtarını girin ve bir vasprun.xml dosyası yükleyin.")
         else:
@@ -8736,6 +8727,7 @@ elif secim == "Convex Hull Analizi":
                     st.info(f"**Sistem Tespit Edildi:** {'-'.join(elements)}")
 
                     # 3. Materials Project'ten Rakip Fazları Çek
+                    # Uyarı: Pymatgen sürümünüze göre MPRester yapısı değişebilir. Hata alırsanız API_KEY'i doğrudan mpr = MPRester(api_key=api_key) şeklinde verebilirsiniz.
                     with MPRester(api_key) as mpr:
                         mp_entries = mpr.get_entries_in_chemsys(elements)
 
@@ -8743,28 +8735,30 @@ elif secim == "Convex Hull Analizi":
 
                     # 4. Convex Hull ve E_hull Hesaplaması
                     all_entries = mp_entries + [my_entry]
-                    pd = PhaseDiagram(all_entries)
-                    ehull = pd.get_e_above_hull(my_entry)
+                    pd_obj = PhaseDiagram(all_entries)
+                    ehull = pd_obj.get_e_above_hull(my_entry)
                     formula = my_structure.composition.reduced_formula
 
                     # 5. Sonuçları Kartlar Halinde Göster
-                    st.subheader("Termodinamik Analiz Sonucu")
+                    st.markdown("---")
+                    st.subheader("📊 Termodinamik Analiz Sonucu")
                     col1, col2 = st.columns(2)
                     col1.metric(label="Malzeme Formülü", value=formula)
                     col2.metric(label="E_hull (Zar Üstü Enerji)", value=f"{ehull:.4f} eV/atom")
 
                     if ehull <= 0.001:
-                        st.success("🎯 **Durum:** TERMODİNAMİK OLARAK KARARLI (Faz zarının üzerinde)")
+                        st.success("🎯 **Durum:** TERMODİNAMİK OLARAK KARARLI (Faz zarının üzerinde veya içinde)")
                     elif ehull <= 0.050:
                         st.warning("⚠️ **Durum:** YARI-KARARLI (Metastable - Uygun kinetik şartlarda sentezlenebilir)")
                     else:
                         st.error("❌ **Durum:** KARARSIZ (Daha düşük enerjili rakip fazlara ayrışma eğiliminde)")
 
                     # 6. Faz Diyagramını Streamlit Üzerinde Çizdirme
-                    st.subheader("Faz Diyagramı (Convex Hull)")
+                    st.markdown("---")
+                    st.subheader("📐 Faz Diyagramı (Convex Hull)")
                     
                     # PDPlotter, show() yerine doğrudan Matplotlib axes/figure döndürebilir
-                    plotter = PDPlotter(pd, show_unstable=True)
+                    plotter = PDPlotter(pd_obj, show_unstable=True)
                     plot_fig = plotter.get_plot() 
                     
                     # Matplotlib figürünü Streamlit'e aktar
@@ -8774,4 +8768,9 @@ elif secim == "Convex Hull Analizi":
                     plt.close(plot_fig)
 
                 except Exception as e:
-                    st.error(f"Analiz sırasında bir hata oluştu: {e}")
+                    st.error(f"Analiz sırasında bir hata oluştu: {e}. API anahtarınızın doğru (Legacy API) olduğundan emin olun.")
+                
+                finally:
+                    # 7. TEMİZLİK: Yüklenen devasa xml dosyasını arka plandan sil (Hard disk dolmasını engeller)
+                    if os.path.exists(tmp_file_path):
+                        os.remove(tmp_file_path)
