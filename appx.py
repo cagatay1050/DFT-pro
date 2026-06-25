@@ -191,7 +191,8 @@ menuler = {
         "⛰️ NEB Enerji Bariyeri (Energy Profile)",
         "📍 Çoklu Sıcaklık VDoS (Overlay)",
         "🧱 Elastik Özellikler ve Modüller",
-        "🔋 CASTEP Kinetik Analiz"
+        "🔋 CASTEP Kinetik Analiz",
+        "Convex Hull Analizi"
     ],
     "🤖 Otonom NEB ve Difüzyon": [
         "📌 NEB Master İş Akışı",
@@ -8690,3 +8691,87 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
             file_name=f"{mat_name.replace('$', '').replace('_', '')}_diffusion_barrier.png",
             mime="image/png"
         )
+        import streamlit as st
+import tempfile
+import matplotlib.pyplot as plt
+
+# Gerekli pymatgen modülleri (Performans için sadece bu menü açıldığında import edilebilir)
+from pymatgen.ext.matproj import MPRester
+from pymatgen.io.vasp import Vasprun
+from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
+from pymatgen.entries.computed_entries import ComputedEntry
+
+# --- Sizin kodunuzdaki menü yapısı varsayımı ---
+# menu_secim = st.sidebar.selectbox("Menü", ["Giriş", "Convex Hull Analizi", "Diğer"])
+# if menu_secim == "Giriş":
+#     st.write("Ana sayfa")
+
+elif secim == "Convex Hull Analizi":
+    st.header("Otomatik Faz Kararlılığı (Convex Hull) Analizi")
+    st.markdown("VASP `vasprun.xml` dosyanızı yükleyin. Sistem Materials Project veritabanına bağlanarak rakip fazları çekecek ve termodinamik kararlılığı hesaplayacaktır.")
+
+    # API Anahtarı ve Dosya Yükleyici
+    api_key = st.text_input("Materials Project API Anahtarı", type="password", help="materialsproject.org adresinden ücretsiz alabilirsiniz.")
+    uploaded_file = st.file_uploader("vasprun.xml dosyasını yükleyin", type=['xml'])
+
+    if st.button("Analizi Başlat"):
+        if not api_key or not uploaded_file:
+            st.warning("Lütfen API anahtarını girin ve bir vasprun.xml dosyası yükleyin.")
+        else:
+            with st.spinner("MP Veritabanına bağlanılıyor ve analiz yapılıyor... Bu işlem 1-2 dakika sürebilir."):
+                
+                # 1. Yüklenen dosyayı geçici (temp) olarak kaydetme işlemi
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".xml") as tmp_file:
+                    tmp_file.write(uploaded_file.getvalue())
+                    tmp_file_path = tmp_file.name
+
+                try:
+                    # 2. VASP Çıktısını Oku
+                    vrun = Vasprun(tmp_file_path, parse_potcar_file=False)
+                    my_structure = vrun.final_structure
+                    my_energy = vrun.final_energy
+                    my_entry = ComputedEntry(my_structure.composition, my_energy)
+                    
+                    elements = [str(el) for el in my_structure.composition.elements]
+                    st.info(f"**Sistem Tespit Edildi:** {'-'.join(elements)}")
+
+                    # 3. Materials Project'ten Rakip Fazları Çek
+                    with MPRester(api_key) as mpr:
+                        mp_entries = mpr.get_entries_in_chemsys(elements)
+
+                    st.success(f"Veritabanından **{len(mp_entries)}** adet rakip faz başarıyla çekildi.")
+
+                    # 4. Convex Hull ve E_hull Hesaplaması
+                    all_entries = mp_entries + [my_entry]
+                    pd = PhaseDiagram(all_entries)
+                    ehull = pd.get_e_above_hull(my_entry)
+                    formula = my_structure.composition.reduced_formula
+
+                    # 5. Sonuçları Kartlar Halinde Göster
+                    st.subheader("Termodinamik Analiz Sonucu")
+                    col1, col2 = st.columns(2)
+                    col1.metric(label="Malzeme Formülü", value=formula)
+                    col2.metric(label="E_hull (Zar Üstü Enerji)", value=f"{ehull:.4f} eV/atom")
+
+                    if ehull <= 0.001:
+                        st.success("🎯 **Durum:** TERMODİNAMİK OLARAK KARARLI (Faz zarının üzerinde)")
+                    elif ehull <= 0.050:
+                        st.warning("⚠️ **Durum:** YARI-KARARLI (Metastable - Uygun kinetik şartlarda sentezlenebilir)")
+                    else:
+                        st.error("❌ **Durum:** KARARSIZ (Daha düşük enerjili rakip fazlara ayrışma eğiliminde)")
+
+                    # 6. Faz Diyagramını Streamlit Üzerinde Çizdirme
+                    st.subheader("Faz Diyagramı (Convex Hull)")
+                    
+                    # PDPlotter, show() yerine doğrudan Matplotlib axes/figure döndürebilir
+                    plotter = PDPlotter(pd, show_unstable=True)
+                    plot_fig = plotter.get_plot() 
+                    
+                    # Matplotlib figürünü Streamlit'e aktar
+                    st.pyplot(plot_fig)
+                    
+                    # Açık kalan plot objesini temizle (bellek sızıntısını önlemek için)
+                    plt.close(plot_fig)
+
+                except Exception as e:
+                    st.error(f"Analiz sırasında bir hata oluştu: {e}")
