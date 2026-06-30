@@ -8780,54 +8780,77 @@ elif secim == "📈 Convex Hull Analizi":
 # ==========================================
 elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
     st.header("Sıcaklığa Bağlı Termodinamik Özellikler (2x2 Panel)")
-    st.markdown("VASP'tan elde ettiğiniz termodinamik veri dosyalarını yükleyin. İki veya daha fazla malzemenin **Serbest Enerji (F), Entropi (S), Isı Kapasitesi (Cv)** ve **İç Enerji (E)** değişimlerini tek bir makale panelinde kıyaslayın.")
+    st.markdown("VASP/Phonopy çıktısı olan termodinamik verileri yükleyin. İki veya daha fazla malzemenin Serbest Enerji ($F$), Entropi ($S$), Isı Kapasitesi ($C_v$) ve İç Enerji ($E$) değişimlerini Origin kalitesinde kıyaslayın.")
     st.markdown("---")
 
     # --- 1. MALZEME SAYISI VE VERİ GİRİŞİ ---
     n_materials = st.number_input("Kaç farklı malzeme (veri dosyası) kıyaslanacak?", min_value=1, max_value=8, value=2, step=1)
     
-    st.markdown(f"### 📂 {n_materials} Malzeme İçin Verileri Yükleyin")
-    
-    # Kullanıcıdan alınacak verileri tutacağımız liste
     thermo_data_inputs = []
-    
-    # Varsayılan renk paleti (Origin tarzı)
+    summary_table_data = []
     default_colors = ['#E74C3C', '#2980B9', '#27AE60', '#8E44AD', '#F39C12', '#34495E', '#D35400', '#16A085']
 
+    st.markdown(f"### 📂 {n_materials} Malzeme İçin Verileri Yükleyin")
     for i in range(n_materials):
-        with st.expander(f"Malzeme {i+1} Ayarları", expanded=True):
-            c1, c2, c3 = st.columns([2, 1, 1.5])
+        with st.expander(f"Malzeme {i+1} Ayarları ve Fiziksel Girdiler", expanded=True):
+            # Dosya ve Temel Ayarlar
+            c1, c2, c3 = st.columns([1.5, 1, 1.5])
             with c1:
                 uploaded_file = st.file_uploader(f"Veri Dosyası (Malzeme {i+1})", type=["dat", "txt", "out"], key=f"t_file_{i}")
             with c2:
                 color = st.color_picker(f"Grafik Rengi", value=default_colors[i % len(default_colors)], key=f"t_col_{i}")
             with c3:
-                label = st.text_input(f"Lejant İsmi", value=f"Malzeme {i+1}", key=f"t_lbl_{i}")
-                
-            thermo_data_inputs.append({"file": uploaded_file, "color": color, "label": label})
+                label = st.text_input(f"Bileşik Formülü (Örn: K_2TiH_6)", value=f"Material_{i+1}", key=f"t_lbl_{i}", help="Alt indis için _ kullanın. Otomatik olarak LaTeX formatında yazılacaktır.")
+            
+            # Termodinamik Analiz Girdileri (ZPE ve Dulong-Petit için)
+            st.markdown("**Fiziksel Özellikler (ZPE ve Dulong-Petit İçin)**")
+            cp1, cp2 = st.columns(2)
+            with cp1:
+                n_atoms = st.number_input("Formüldeki Toplam Atom Sayısı", min_value=1, value=1, key=f"t_natom_{i}")
+            with cp2:
+                zpe_input = st.number_input("Zero Point Energy (kJ/mol)", value=0.0, format="%.4f", key=f"t_zpe_{i}", help="Phonopy thermal_properties.yaml dosyasındaki zero_point_energy değeri.")
+            
+            # Hesaplamalar (1 eV = 96.485 kJ/mol)
+            dp_limit = 3 * n_atoms * 8.31446  # J/(K*mol)
+            zpve_ev_atom = (zpe_input / 96.485) / n_atoms if n_atoms > 0 else 0.0
+            
+            summary_table_data.append({
+                "Malzeme": f"${label}$",
+                "Atom Sayısı": n_atoms,
+                "Dulong-Petit Limiti (J/K·mol)": f"{dp_limit:.2f}",
+                "ZPE (kJ/mol)": f"{zpe_input:.4f}",
+                "ZPVE (eV/atom)": f"{zpve_ev_atom:.6f}"
+            })
+
+            thermo_data_inputs.append({
+                "file": uploaded_file, "color": color, "label": f"${label}$", 
+                "dp_limit": dp_limit
+            })
+
+    # Fiziksel Özellikler Özet Tablosu
+    if len(summary_table_data) > 0:
+        st.markdown("### 📊 Fiziksel Analiz Tablosu")
+        import pandas as pd
+        df_summary = pd.DataFrame(summary_table_data)
+        st.table(df_summary)
 
     st.markdown("---")
 
-    # --- 2. VERİ OKUMA VE HAFIZAYA ALMA ---
+    # --- 2. VERİ OKUMA ---
     if st.button("🚀 Verileri Oku ve Grafiği Hazırla", type="primary", use_container_width=True):
-        import pandas as pd
         import numpy as np
-        
         valid_datasets = []
         
         for data in thermo_data_inputs:
             if data["file"] is not None:
                 try:
-                    # Dosyayı oku. sep=r'\s+' boşlukları süzer. comment='#' başlık satırını atlar.
                     data["file"].seek(0)
                     df = pd.read_csv(data["file"], sep=r'\s+', comment='#', names=['T', 'F', 'S', 'Cv', 'E'])
                     df = df.dropna().apply(pd.to_numeric, errors='coerce').dropna()
                     
                     if not df.empty:
                         valid_datasets.append({
-                            "df": df,
-                            "color": data["color"],
-                            "label": data["label"]
+                            "df": df, "color": data["color"], "label": data["label"], "dp_limit": data["dp_limit"]
                         })
                 except Exception as e:
                     st.error(f"{data['label']} dosyası okunamadı: {e}")
@@ -8835,96 +8858,144 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
         if len(valid_datasets) > 0:
             st.session_state.thermo_ready = True
             st.session_state.thermo_data = valid_datasets
-            st.success(f"✅ {len(valid_datasets)} malzemenin termodinamik verileri başarıyla hafızaya alındı!")
+            st.success("✅ Veriler başarıyla hafızaya alındı!")
         else:
-            st.error("Lütfen geçerli VASP termodinamik dosyalarını yükleyin.")
+            st.error("Lütfen geçerli termodinamik veri dosyalarını yükleyin.")
 
-    # --- 3. GRAFİK İNCE AYARLARI VE ÇİZİM ---
+    # --- 3. KAPSAMLI GRAFİK İNCE AYARLARI VE ÇİZİM ---
     if st.session_state.get("thermo_ready", False):
         datasets = st.session_state.thermo_data
         
-        # Ortak X Ekseni (Sıcaklık) sınırlarını otomatik bul
-        max_T_global = max([d["df"]['T'].max() for d in datasets])
+        st.markdown("### ⚙️ Origin Stili Grafik ve Eksen Ayarları")
         
-        with st.expander("📐 Ortak Eksen ve İndirme Ayarları", expanded=True):
-            cx1, cx2, cx3 = st.columns(3)
-            with cx1:
-                t_max = st.number_input("Maksimum Sıcaklık (X Ekseni, K)", value=float(max_T_global), step=50.0)
-            with cx2:
-                t_step = st.number_input("Sıcaklık Adımı (Tick)", value=100.0, step=50.0)
-            with cx3:
-                leg_loc = st.selectbox("Lejant Konumu", ["best", "upper right", "upper left", "lower right", "lower left", "center"])
+        # TABLO 1: GENEL VE TİPOGRAFİ
+        with st.expander("📐 Genel Boyut, Boşluk ve Yazı Tipleri", expanded=True):
+            ct1, ct2, ct3 = st.columns(3)
+            with ct1:
+                fig_w = st.number_input("Figür Genişliği (inch)", value=14.0, step=0.5)
+                fig_h = st.number_input("Figür Yüksekliği (inch)", value=10.0, step=0.5)
+            with ct2:
+                w_space = st.slider("Grafikler Arası Yatay Boşluk (wspace)", 0.0, 0.5, 0.25, 0.05)
+                h_space = st.slider("Grafikler Arası Dikey Boşluk (hspace)", 0.0, 0.5, 0.25, 0.05)
+            with ct3:
+                f_label = st.slider("Eksen Başlığı Puntosu", 14, 28, 20)
+                f_tick = st.slider("Eksen Rakam Puntosu", 12, 24, 16)
+                f_leg = st.slider("Lejant Puntosu", 12, 24, 16)
 
-        # 🎨 ÇİZİM BÖLÜMÜ (2x2 Matris)
+        # TABLO 2: EKSEN SINIRLARI
+        with st.expander("📏 Her Grafik İçin Bağımsız Eksen Aralıkları", expanded=True):
+            st.markdown("**Ortak X Ekseni (Sıcaklık, K)**")
+            cx1, cx2, cx3 = st.columns(3)
+            with cx1: t_min = st.number_input("X Min (K)", value=0.0, step=50.0)
+            with cx2: t_max = st.number_input("X Max (K)", value=1000.0, step=50.0)
+            with cx3: t_step = st.number_input("X Adımı", value=200.0, step=50.0)
+
+            st.markdown("---")
+            st.markdown("**Bağımsız Y Eksenleri**")
+            r1, r2, r3, r4 = st.columns(4)
+            with r1:
+                st.markdown("**Serbest Enerji (F)**")
+                f_min = st.number_input("F Min", value=-500.0, step=50.0)
+                f_max = st.number_input("F Max", value=100.0, step=50.0)
+                f_step = st.number_input("F Adım", value=100.0, step=25.0)
+            with r2:
+                st.markdown("**Entropi (S)**")
+                s_min = st.number_input("S Min", value=0.0, step=50.0)
+                s_max = st.number_input("S Max", value=500.0, step=50.0)
+                s_step = st.number_input("S Adım", value=100.0, step=25.0)
+            with r3:
+                st.markdown("**Isı Kapasitesi (Cv)**")
+                cv_min = st.number_input("Cv Min", value=0.0, step=50.0)
+                cv_max = st.number_input("Cv Max", value=300.0, step=50.0)
+                cv_step = st.number_input("Cv Adım", value=50.0, step=25.0)
+            with r4:
+                st.markdown("**İç Enerji (E)**")
+                e_min = st.number_input("E Min", value=0.0, step=50.0)
+                e_max = st.number_input("E Max", value=500.0, step=50.0)
+                e_step = st.number_input("E Adım", value=100.0, step=25.0)
+
+        # 🎨 ÇİZİM BÖLÜMÜ
         import matplotlib.pyplot as plt
         from matplotlib.ticker import MultipleLocator, AutoMinorLocator
         import io
 
-        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+        # Tamamen Times New Roman ve MathText Zorlaması
+        plt.rcParams['font.family'] = 'serif'
+        plt.rcParams['font.serif'] = ['Times New Roman']
+        plt.rcParams['mathtext.fontset'] = 'stix'
+
+        fig, axes = plt.subplots(2, 2, figsize=(fig_w, fig_h))
+        plt.subplots_adjust(wspace=w_space, hspace=h_space)
         
-        # Eksenleri düzleştirip kolay döngüye sokmak için
         ax_F, ax_S = axes[0, 0], axes[0, 1]
         ax_Cv, ax_E = axes[1, 0], axes[1, 1]
 
-        # 1. Serbest Enerji (F)
+        # 1. F (Serbest Enerji)
         for d in datasets:
             ax_F.plot(d["df"]['T'], d["df"]['F'], color=d["color"], linewidth=3.0, label=d["label"])
-        ax_F.set_ylabel(r'$\mathbf{Free\ Energy,\ F\ (kJ/mol)}$', fontweight='bold', fontsize=18, labelpad=10)
-        ax_F.text(0.05, 0.95, "(a)", transform=ax_F.transAxes, fontsize=20, fontweight='bold', va='top')
+        ax_F.set_ylabel(r'$F\ (kJ/mol)$', fontweight='bold', fontsize=f_label, labelpad=10)
+        ax_F.set_ylim(f_min, f_max)
+        ax_F.yaxis.set_major_locator(MultipleLocator(f_step))
+        ax_F.text(0.05, 0.95, "(a)", transform=ax_F.transAxes, fontsize=f_label, fontweight='bold', va='top')
 
-        # 2. Entropi (S)
+        # 2. S (Entropi)
         for d in datasets:
             ax_S.plot(d["df"]['T'], d["df"]['S'], color=d["color"], linewidth=3.0, label=d["label"])
-        ax_S.set_ylabel(r'$\mathbf{Entropy,\ S\ (J/K\cdot mol)}$', fontweight='bold', fontsize=18, labelpad=10)
-        ax_S.text(0.05, 0.95, "(b)", transform=ax_S.transAxes, fontsize=20, fontweight='bold', va='top')
+        ax_S.set_ylabel(r'$S\ (J/K \cdot mol)$', fontweight='bold', fontsize=f_label, labelpad=10)
+        ax_S.set_ylim(s_min, s_max)
+        ax_S.yaxis.set_major_locator(MultipleLocator(s_step))
+        ax_S.text(0.05, 0.95, "(b)", transform=ax_S.transAxes, fontsize=f_label, fontweight='bold', va='top')
 
-        # 3. Isı Kapasitesi (Cv)
+        # 3. Cv (Isı Kapasitesi) ve Dulong-Petit Limitleri
         for d in datasets:
             ax_Cv.plot(d["df"]['T'], d["df"]['Cv'], color=d["color"], linewidth=3.0, label=d["label"])
-        ax_Cv.set_ylabel(r'$\mathbf{Heat\ Capacity,\ C_v\ (J/K\cdot mol)}$', fontweight='bold', fontsize=18, labelpad=10)
-        ax_Cv.text(0.05, 0.95, "(c)", transform=ax_Cv.transAxes, fontsize=20, fontweight='bold', va='top')
+            # Dulong-Petit Limit Çizgisi
+            if d["dp_limit"] > 0 and cv_min <= d["dp_limit"] <= cv_max:
+                ax_Cv.axhline(d["dp_limit"], color=d["color"], linestyle='--', linewidth=1.5, alpha=0.7)
+        ax_Cv.set_ylabel(r'$C_v\ (J/K \cdot mol)$', fontweight='bold', fontsize=f_label, labelpad=10)
+        ax_Cv.set_ylim(cv_min, cv_max)
+        ax_Cv.yaxis.set_major_locator(MultipleLocator(cv_step))
+        ax_Cv.text(0.05, 0.95, "(c)", transform=ax_Cv.transAxes, fontsize=f_label, fontweight='bold', va='top')
 
-        # 4. İç Enerji (E)
+        # 4. E (İç Enerji)
         for d in datasets:
             ax_E.plot(d["df"]['T'], d["df"]['E'], color=d["color"], linewidth=3.0, label=d["label"])
-        ax_E.set_ylabel(r'$\mathbf{Internal\ Energy,\ E\ (kJ/mol)}$', fontweight='bold', fontsize=18, labelpad=10)
-        ax_E.text(0.05, 0.95, "(d)", transform=ax_E.transAxes, fontsize=20, fontweight='bold', va='top')
+        ax_E.set_ylabel(r'$E\ (kJ/mol)$', fontweight='bold', fontsize=f_label, labelpad=10)
+        ax_E.set_ylim(e_min, e_max)
+        ax_E.yaxis.set_major_locator(MultipleLocator(e_step))
+        ax_E.text(0.05, 0.95, "(d)", transform=ax_E.transAxes, fontsize=f_label, fontweight='bold', va='top')
 
         # --- ORTAK EKSEN VE GÖRÜNÜM AYARLARI ---
         for ax in axes.flat:
-            ax.set_xlabel(r'$\mathbf{Temperature\ (K)}$', fontweight='bold', fontsize=18, labelpad=10)
-            ax.set_xlim(0, t_max)
+            ax.set_xlabel(r'$T\ (K)$', fontweight='bold', fontsize=f_label, labelpad=10)
+            ax.set_xlim(t_min, t_max)
             ax.xaxis.set_major_locator(MultipleLocator(t_step))
             ax.xaxis.set_minor_locator(AutoMinorLocator(2))
             ax.yaxis.set_minor_locator(AutoMinorLocator(2))
             
-            # Kalın çerçeveler ve içe dönük tikler
-            ax.tick_params(axis='both', which='major', labelsize=16, direction='in', length=8, width=2.0, top=True, right=True)
-            ax.tick_params(axis='both', which='minor', direction='in', length=4, width=1.5, top=True, right=True)
+            # Üst ve Sağ Ticks (Çentikler) Kapatıldı, Sadece Çerçeve Kaldı
+            ax.tick_params(axis='both', which='major', labelsize=f_tick, direction='in', length=8, width=2.0, top=False, right=False)
+            ax.tick_params(axis='both', which='minor', direction='in', length=4, width=1.5, top=False, right=False)
+            
             for spine in ax.spines.values():
                 spine.set_linewidth(2.0)
-            for label in ax.get_xticklabels() + ax.get_yticklabels():
-                label.set_fontweight('bold')
+                spine.set_visible(True) # Çerçeveleri her yönden görünür kıldık
 
-        # Lejantı sadece ilk grafiğe (F) veya tüm figürün üzerine ekleyelim (Temiz görünüm için F grafiğine eklenir)
-        ax_F.legend(loc=leg_loc, frameon=False, prop={'weight':'bold', 'size':16})
+        # Lejant sadece (a) paneline (F) eklenir
+        ax_F.legend(loc='best', frameon=False, prop={'weight':'bold', 'size':f_leg})
 
-        plt.tight_layout(pad=3.0)
-        
-        # Ekrana Bas
         st.pyplot(fig)
         
         # İndirme Butonu
-        st.markdown("### 📥 Yüksek Çözünürlüklü Dışa Aktar")
         c_dpi1, c_dpi2 = st.columns([1, 3])
         with c_dpi1:
-            dpi_secim = st.selectbox("Çözünürlük (DPI)", [300, 600, 1000], index=1)
+            dpi_secim = st.selectbox("İndirme Çözünürlüğü (DPI)", [300, 600, 1000, 1200], index=1)
         with c_dpi2:
             st.markdown("<br>", unsafe_allow_html=True)
             buf = io.BytesIO()
             fig.savefig(buf, format="png", bbox_inches='tight', dpi=dpi_secim)
             st.download_button(
-                label=f"Grafiği İndir (PNG, {dpi_secim} DPI)", 
+                label=f"📥 Paneli İndir (PNG, {dpi_secim} DPI)", 
                 data=buf.getvalue(), 
                 file_name="Thermodynamic_Comparison_Origin.png", 
                 mime="image/png",
