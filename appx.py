@@ -195,7 +195,8 @@ menuler = {
         "📍 Çoklu Sıcaklık VDoS (Overlay)",
         "🧱 Elastik Özellikler ve Modüller",
         "🔋 CASTEP Kinetik Analiz",
-        "📈 Convex Hull Analizi"
+        "📈 Convex Hull Analizi",
+        "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)"
     ],
     "🤖 Otonom NEB ve Difüzyon": [
         "📌 NEB Master İş Akışı",
@@ -8774,3 +8775,158 @@ elif secim == "📈 Convex Hull Analizi":
                     # 7. TEMİZLİK: Yüklenen devasa xml dosyasını arka plandan sil (Hard disk dolmasını engeller)
                     if os.path.exists(tmp_file_path):
                         os.remove(tmp_file_path)
+# ==========================================
+# MODÜL: VASP TERMODİNAMİK KIYASLAMA (2x2 PANEL)
+# ==========================================
+elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
+    st.header("Sıcaklığa Bağlı Termodinamik Özellikler (2x2 Panel)")
+    st.markdown("VASP'tan elde ettiğiniz termodinamik veri dosyalarını yükleyin. İki veya daha fazla malzemenin **Serbest Enerji (F), Entropi (S), Isı Kapasitesi (Cv)** ve **İç Enerji (E)** değişimlerini tek bir makale panelinde kıyaslayın.")
+    st.markdown("---")
+
+    # --- 1. MALZEME SAYISI VE VERİ GİRİŞİ ---
+    n_materials = st.number_input("Kaç farklı malzeme (veri dosyası) kıyaslanacak?", min_value=1, max_value=8, value=2, step=1)
+    
+    st.markdown(f"### 📂 {n_materials} Malzeme İçin Verileri Yükleyin")
+    
+    # Kullanıcıdan alınacak verileri tutacağımız liste
+    thermo_data_inputs = []
+    
+    # Varsayılan renk paleti (Origin tarzı)
+    default_colors = ['#E74C3C', '#2980B9', '#27AE60', '#8E44AD', '#F39C12', '#34495E', '#D35400', '#16A085']
+
+    for i in range(n_materials):
+        with st.expander(f"Malzeme {i+1} Ayarları", expanded=True):
+            c1, c2, c3 = st.columns([2, 1, 1.5])
+            with c1:
+                uploaded_file = st.file_uploader(f"Veri Dosyası (Malzeme {i+1})", type=["dat", "txt", "out"], key=f"t_file_{i}")
+            with c2:
+                color = st.color_picker(f"Grafik Rengi", value=default_colors[i % len(default_colors)], key=f"t_col_{i}")
+            with c3:
+                label = st.text_input(f"Lejant İsmi", value=f"Malzeme {i+1}", key=f"t_lbl_{i}")
+                
+            thermo_data_inputs.append({"file": uploaded_file, "color": color, "label": label})
+
+    st.markdown("---")
+
+    # --- 2. VERİ OKUMA VE HAFIZAYA ALMA ---
+    if st.button("🚀 Verileri Oku ve Grafiği Hazırla", type="primary", use_container_width=True):
+        import pandas as pd
+        import numpy as np
+        
+        valid_datasets = []
+        
+        for data in thermo_data_inputs:
+            if data["file"] is not None:
+                try:
+                    # Dosyayı oku. sep=r'\s+' boşlukları süzer. comment='#' başlık satırını atlar.
+                    data["file"].seek(0)
+                    df = pd.read_csv(data["file"], sep=r'\s+', comment='#', names=['T', 'F', 'S', 'Cv', 'E'])
+                    df = df.dropna().apply(pd.to_numeric, errors='coerce').dropna()
+                    
+                    if not df.empty:
+                        valid_datasets.append({
+                            "df": df,
+                            "color": data["color"],
+                            "label": data["label"]
+                        })
+                except Exception as e:
+                    st.error(f"{data['label']} dosyası okunamadı: {e}")
+                    
+        if len(valid_datasets) > 0:
+            st.session_state.thermo_ready = True
+            st.session_state.thermo_data = valid_datasets
+            st.success(f"✅ {len(valid_datasets)} malzemenin termodinamik verileri başarıyla hafızaya alındı!")
+        else:
+            st.error("Lütfen geçerli VASP termodinamik dosyalarını yükleyin.")
+
+    # --- 3. GRAFİK İNCE AYARLARI VE ÇİZİM ---
+    if st.session_state.get("thermo_ready", False):
+        datasets = st.session_state.thermo_data
+        
+        # Ortak X Ekseni (Sıcaklık) sınırlarını otomatik bul
+        max_T_global = max([d["df"]['T'].max() for d in datasets])
+        
+        with st.expander("📐 Ortak Eksen ve İndirme Ayarları", expanded=True):
+            cx1, cx2, cx3 = st.columns(3)
+            with cx1:
+                t_max = st.number_input("Maksimum Sıcaklık (X Ekseni, K)", value=float(max_T_global), step=50.0)
+            with cx2:
+                t_step = st.number_input("Sıcaklık Adımı (Tick)", value=100.0, step=50.0)
+            with cx3:
+                leg_loc = st.selectbox("Lejant Konumu", ["best", "upper right", "upper left", "lower right", "lower left", "center"])
+
+        # 🎨 ÇİZİM BÖLÜMÜ (2x2 Matris)
+        import matplotlib.pyplot as plt
+        from matplotlib.ticker import MultipleLocator, AutoMinorLocator
+        import io
+
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+        
+        # Eksenleri düzleştirip kolay döngüye sokmak için
+        ax_F, ax_S = axes[0, 0], axes[0, 1]
+        ax_Cv, ax_E = axes[1, 0], axes[1, 1]
+
+        # 1. Serbest Enerji (F)
+        for d in datasets:
+            ax_F.plot(d["df"]['T'], d["df"]['F'], color=d["color"], linewidth=3.0, label=d["label"])
+        ax_F.set_ylabel(r'$\mathbf{Free\ Energy,\ F\ (kJ/mol)}$', fontweight='bold', fontsize=18, labelpad=10)
+        ax_F.text(0.05, 0.95, "(a)", transform=ax_F.transAxes, fontsize=20, fontweight='bold', va='top')
+
+        # 2. Entropi (S)
+        for d in datasets:
+            ax_S.plot(d["df"]['T'], d["df"]['S'], color=d["color"], linewidth=3.0, label=d["label"])
+        ax_S.set_ylabel(r'$\mathbf{Entropy,\ S\ (J/K\cdot mol)}$', fontweight='bold', fontsize=18, labelpad=10)
+        ax_S.text(0.05, 0.95, "(b)", transform=ax_S.transAxes, fontsize=20, fontweight='bold', va='top')
+
+        # 3. Isı Kapasitesi (Cv)
+        for d in datasets:
+            ax_Cv.plot(d["df"]['T'], d["df"]['Cv'], color=d["color"], linewidth=3.0, label=d["label"])
+        ax_Cv.set_ylabel(r'$\mathbf{Heat\ Capacity,\ C_v\ (J/K\cdot mol)}$', fontweight='bold', fontsize=18, labelpad=10)
+        ax_Cv.text(0.05, 0.95, "(c)", transform=ax_Cv.transAxes, fontsize=20, fontweight='bold', va='top')
+
+        # 4. İç Enerji (E)
+        for d in datasets:
+            ax_E.plot(d["df"]['T'], d["df"]['E'], color=d["color"], linewidth=3.0, label=d["label"])
+        ax_E.set_ylabel(r'$\mathbf{Internal\ Energy,\ E\ (kJ/mol)}$', fontweight='bold', fontsize=18, labelpad=10)
+        ax_E.text(0.05, 0.95, "(d)", transform=ax_E.transAxes, fontsize=20, fontweight='bold', va='top')
+
+        # --- ORTAK EKSEN VE GÖRÜNÜM AYARLARI ---
+        for ax in axes.flat:
+            ax.set_xlabel(r'$\mathbf{Temperature\ (K)}$', fontweight='bold', fontsize=18, labelpad=10)
+            ax.set_xlim(0, t_max)
+            ax.xaxis.set_major_locator(MultipleLocator(t_step))
+            ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+            ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+            
+            # Kalın çerçeveler ve içe dönük tikler
+            ax.tick_params(axis='both', which='major', labelsize=16, direction='in', length=8, width=2.0, top=True, right=True)
+            ax.tick_params(axis='both', which='minor', direction='in', length=4, width=1.5, top=True, right=True)
+            for spine in ax.spines.values():
+                spine.set_linewidth(2.0)
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontweight('bold')
+
+        # Lejantı sadece ilk grafiğe (F) veya tüm figürün üzerine ekleyelim (Temiz görünüm için F grafiğine eklenir)
+        ax_F.legend(loc=leg_loc, frameon=False, prop={'weight':'bold', 'size':16})
+
+        plt.tight_layout(pad=3.0)
+        
+        # Ekrana Bas
+        st.pyplot(fig)
+        
+        # İndirme Butonu
+        st.markdown("### 📥 Yüksek Çözünürlüklü Dışa Aktar")
+        c_dpi1, c_dpi2 = st.columns([1, 3])
+        with c_dpi1:
+            dpi_secim = st.selectbox("Çözünürlük (DPI)", [300, 600, 1000], index=1)
+        with c_dpi2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches='tight', dpi=dpi_secim)
+            st.download_button(
+                label=f"Grafiği İndir (PNG, {dpi_secim} DPI)", 
+                data=buf.getvalue(), 
+                file_name="Thermodynamic_Comparison_Origin.png", 
+                mime="image/png",
+                use_container_width=True
+            )
