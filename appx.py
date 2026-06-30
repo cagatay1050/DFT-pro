@@ -8937,41 +8937,40 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
         # 1. F (Serbest Enerji)
         for d in datasets:
             ax_F.plot(d["df"]['T'], d["df"]['F'], color=d["color"], linewidth=line_w, label=d["label"])
-        ax_F.set_ylabel(r'$\mathbf{F\ (kJ/mol)}$', fontweight='bold', fontsize=f_label, labelpad=10)
+        ax_F.set_ylabel(r'$\mathbf{F}$ (kJ/mol)', fontweight='bold', fontsize=f_label, labelpad=10)
         ax_F.set_ylim(f_min, f_max)
         ax_F.yaxis.set_major_locator(MultipleLocator(f_step))
-        ax_F.text(0.05, 0.95, r"\textbf{(a)}", transform=ax_F.transAxes, fontsize=f_panel, fontweight='bold', va='top')
+        ax_F.text(0.05, 0.95, "(a)", transform=ax_F.transAxes, fontsize=f_panel, fontweight='bold', va='top')
 
         # 2. S (Entropi)
         for d in datasets:
             ax_S.plot(d["df"]['T'], d["df"]['S'], color=d["color"], linewidth=line_w, label=d["label"])
-        ax_S.set_ylabel(r'$\mathbf{S\ (J/K \cdot mol)}$', fontweight='bold', fontsize=f_label, labelpad=10)
+        ax_S.set_ylabel(r'$\mathbf{S}$ (J/K$\cdot$mol)', fontweight='bold', fontsize=f_label, labelpad=10)
         ax_S.set_ylim(s_min, s_max)
         ax_S.yaxis.set_major_locator(MultipleLocator(s_step))
-        ax_S.text(0.05, 0.95, r"\textbf{(b)}", transform=ax_S.transAxes, fontsize=f_panel, fontweight='bold', va='top')
+        ax_S.text(0.05, 0.95, "(b)", transform=ax_S.transAxes, fontsize=f_panel, fontweight='bold', va='top')
 
         # 3. Cv (Isı Kapasitesi) ve Dulong-Petit Limitleri
         for d in datasets:
             ax_Cv.plot(d["df"]['T'], d["df"]['Cv'], color=d["color"], linewidth=line_w, label=d["label"])
-            # Dulong-Petit Limit Çizgisi
             if d["dp_limit"] > 0 and cv_min <= d["dp_limit"] <= cv_max:
                 ax_Cv.axhline(d["dp_limit"], color=d["color"], linestyle='--', linewidth=line_w/1.5, alpha=0.7)
-        ax_Cv.set_ylabel(r'$\mathbf{C_v\ (J/K \cdot mol)}$', fontweight='bold', fontsize=f_label, labelpad=10)
+        ax_Cv.set_ylabel(r'$\mathbf{C_v}$ (J/K$\cdot$mol)', fontweight='bold', fontsize=f_label, labelpad=10)
         ax_Cv.set_ylim(cv_min, cv_max)
         ax_Cv.yaxis.set_major_locator(MultipleLocator(cv_step))
-        ax_Cv.text(0.05, 0.95, r"\textbf{(c)}", transform=ax_Cv.transAxes, fontsize=f_panel, fontweight='bold', va='top')
+        ax_Cv.text(0.05, 0.95, "(c)", transform=ax_Cv.transAxes, fontsize=f_panel, fontweight='bold', va='top')
 
         # 4. E (İç Enerji)
         for d in datasets:
             ax_E.plot(d["df"]['T'], d["df"]['E'], color=d["color"], linewidth=line_w, label=d["label"])
-        ax_E.set_ylabel(r'$\mathbf{E\ (kJ/mol)}$', fontweight='bold', fontsize=f_label, labelpad=10)
+        ax_E.set_ylabel(r'$\mathbf{E}$ (kJ/mol)', fontweight='bold', fontsize=f_label, labelpad=10)
         ax_E.set_ylim(e_min, e_max)
         ax_E.yaxis.set_major_locator(MultipleLocator(e_step))
-        ax_E.text(0.05, 0.95, r"\textbf{(d)}", transform=ax_E.transAxes, fontsize=f_panel, fontweight='bold', va='top')
+        ax_E.text(0.05, 0.95, "(d)", transform=ax_E.transAxes, fontsize=f_panel, fontweight='bold', va='top')
 
         # --- ORTAK EKSEN VE GÖRÜNÜM AYARLARI ---
         for ax in axes.flat:
-            ax.set_xlabel(r'$\mathbf{Temperature\ (K)}$', fontweight='bold', fontsize=f_label, labelpad=10)
+            ax.set_xlabel(r'$\mathbf{Temperature}$ (K)', fontweight='bold', fontsize=f_label, labelpad=10)
             ax.set_xlim(t_min, t_max)
             ax.xaxis.set_major_locator(MultipleLocator(t_step))
             ax.xaxis.set_minor_locator(AutoMinorLocator(2))
