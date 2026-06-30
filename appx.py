@@ -8800,15 +8800,15 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
             with c2:
                 color = st.color_picker(f"Grafik Rengi", value=default_colors[i % len(default_colors)], key=f"t_col_{i}")
             with c3:
-                label = st.text_input(f"Bileşik Formülü (Örn: K_2TiH_6)", value=f"Material_{i+1}", key=f"t_lbl_{i}", help="Alt indis için _ kullanın. Otomatik olarak LaTeX formatında yazılacaktır.")
+                label = st.text_input(f"Bileşik Formülü", value=f"Material_{i+1}", key=f"t_lbl_{i}", help="Alt indis için _ kullanın. Otomatik olarak LaTeX formatında yazılacaktır.")
             
             # Termodinamik Analiz Girdileri (ZPE ve Dulong-Petit için)
-            st.markdown("**Fiziksel Özellikler (ZPE ve Dulong-Petit İçin)**")
+            st.markdown("**Fiziksel Özellikler** 💡 *(Not: Dulong-Petit çizgisinin Cv platosuna tam oturması için, VASP (POSCAR) dosyanızdaki TOPLAM atom sayısını girmelisiniz, sadece formüldekini değil!)*")
             cp1, cp2 = st.columns(2)
             with cp1:
-                n_atoms = st.number_input("Formüldeki Toplam Atom Sayısı", min_value=1, value=1, key=f"t_natom_{i}")
+                n_atoms = st.number_input("VASP Hücresindeki Toplam Atom Sayısı", min_value=1, value=1, key=f"t_natom_{i}")
             with cp2:
-                zpe_input = st.number_input("Zero Point Energy (kJ/mol)", value=0.0, format="%.4f", key=f"t_zpe_{i}", help="Phonopy thermal_properties.yaml dosyasındaki zero_point_energy değeri.")
+                zpe_input = st.number_input("Zero Point Energy (kJ/mol)", value=0.0, format="%.4f", key=f"t_zpe_{i}")
             
             # Hesaplamalar (1 eV = 96.485 kJ/mol)
             dp_limit = 3 * n_atoms * 8.31446  # J/(K*mol)
@@ -8816,7 +8816,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
             
             summary_table_data.append({
                 "Malzeme": f"${label}$",
-                "Atom Sayısı": n_atoms,
+                "Hücre Atom Sayısı": n_atoms,
                 "Dulong-Petit Limiti (J/K·mol)": f"{dp_limit:.2f}",
                 "ZPE (kJ/mol)": f"{zpe_input:.4f}",
                 "ZPVE (eV/atom)": f"{zpve_ev_atom:.6f}"
@@ -8868,23 +8868,27 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
         
         st.markdown("### ⚙️ Origin Stili Grafik ve Eksen Ayarları")
         
-        # TABLO 1: GENEL VE TİPOGRAFİ
-        with st.expander("📐 Genel Boyut, Boşluk ve Yazı Tipleri", expanded=True):
-            ct1, ct2, ct3 = st.columns(3)
+        # TABLO 1: GENEL, TİPOGRAFİ VE ÇİZGİ KALINLIKLARI
+        with st.expander("📐 Boyut, Kalınlık ve Yazı Tipi Ayarları", expanded=True):
+            ct1, ct2, ct3, ct4 = st.columns(4)
             with ct1:
-                fig_w = st.number_input("Figür Genişliği (inch)", value=14.0, step=0.5)
-                fig_h = st.number_input("Figür Yüksekliği (inch)", value=10.0, step=0.5)
+                fig_w = st.number_input("Genişlik (inch)", value=14.0, step=0.5)
+                fig_h = st.number_input("Yükseklik (inch)", value=10.0, step=0.5)
             with ct2:
-                w_space = st.slider("Grafikler Arası Yatay Boşluk (wspace)", 0.0, 0.5, 0.25, 0.05)
-                h_space = st.slider("Grafikler Arası Dikey Boşluk (hspace)", 0.0, 0.5, 0.25, 0.05)
+                w_space = st.slider("Yatay Boşluk (wspace)", 0.0, 0.5, 0.25, 0.05)
+                h_space = st.slider("Dikey Boşluk (hspace)", 0.0, 0.5, 0.25, 0.05)
             with ct3:
-                f_label = st.slider("Eksen Başlığı Puntosu", 14, 28, 20)
-                f_tick = st.slider("Eksen Rakam Puntosu", 12, 24, 16)
+                f_label = st.slider("Eksen İsim Puntosu", 14, 28, 20)
+                f_tick = st.slider("Rakam Puntosu", 12, 24, 16)
                 f_leg = st.slider("Lejant Puntosu", 12, 24, 16)
+                f_panel = st.slider("(a, b) Harf Puntosu", 16, 32, 22)
+            with ct4:
+                line_w = st.slider("İç Çizgi Kalınlığı (Veri)", 1.0, 5.0, 3.0, 0.5)
+                frame_w = st.slider("Dış Çerçeve Kalınlığı", 1.0, 4.0, 2.0, 0.5)
 
         # TABLO 2: EKSEN SINIRLARI
         with st.expander("📏 Her Grafik İçin Bağımsız Eksen Aralıkları", expanded=True):
-            st.markdown("**Ortak X Ekseni (Sıcaklık, K)**")
+            st.markdown("**Ortak X Ekseni**")
             cx1, cx2, cx3 = st.columns(3)
             with cx1: t_min = st.number_input("X Min (K)", value=0.0, step=50.0)
             with cx2: t_max = st.number_input("X Max (K)", value=1000.0, step=50.0)
@@ -8932,54 +8936,59 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
 
         # 1. F (Serbest Enerji)
         for d in datasets:
-            ax_F.plot(d["df"]['T'], d["df"]['F'], color=d["color"], linewidth=3.0, label=d["label"])
-        ax_F.set_ylabel(r'$F\ (kJ/mol)$', fontweight='bold', fontsize=f_label, labelpad=10)
+            ax_F.plot(d["df"]['T'], d["df"]['F'], color=d["color"], linewidth=line_w, label=d["label"])
+        ax_F.set_ylabel(r'$\mathbf{F\ (kJ/mol)}$', fontweight='bold', fontsize=f_label, labelpad=10)
         ax_F.set_ylim(f_min, f_max)
         ax_F.yaxis.set_major_locator(MultipleLocator(f_step))
-        ax_F.text(0.05, 0.95, "(a)", transform=ax_F.transAxes, fontsize=f_label, fontweight='bold', va='top')
+        ax_F.text(0.05, 0.95, r"\textbf{(a)}", transform=ax_F.transAxes, fontsize=f_panel, fontweight='bold', va='top')
 
         # 2. S (Entropi)
         for d in datasets:
-            ax_S.plot(d["df"]['T'], d["df"]['S'], color=d["color"], linewidth=3.0, label=d["label"])
-        ax_S.set_ylabel(r'$S\ (J/K \cdot mol)$', fontweight='bold', fontsize=f_label, labelpad=10)
+            ax_S.plot(d["df"]['T'], d["df"]['S'], color=d["color"], linewidth=line_w, label=d["label"])
+        ax_S.set_ylabel(r'$\mathbf{S\ (J/K \cdot mol)}$', fontweight='bold', fontsize=f_label, labelpad=10)
         ax_S.set_ylim(s_min, s_max)
         ax_S.yaxis.set_major_locator(MultipleLocator(s_step))
-        ax_S.text(0.05, 0.95, "(b)", transform=ax_S.transAxes, fontsize=f_label, fontweight='bold', va='top')
+        ax_S.text(0.05, 0.95, r"\textbf{(b)}", transform=ax_S.transAxes, fontsize=f_panel, fontweight='bold', va='top')
 
         # 3. Cv (Isı Kapasitesi) ve Dulong-Petit Limitleri
         for d in datasets:
-            ax_Cv.plot(d["df"]['T'], d["df"]['Cv'], color=d["color"], linewidth=3.0, label=d["label"])
+            ax_Cv.plot(d["df"]['T'], d["df"]['Cv'], color=d["color"], linewidth=line_w, label=d["label"])
             # Dulong-Petit Limit Çizgisi
             if d["dp_limit"] > 0 and cv_min <= d["dp_limit"] <= cv_max:
-                ax_Cv.axhline(d["dp_limit"], color=d["color"], linestyle='--', linewidth=1.5, alpha=0.7)
-        ax_Cv.set_ylabel(r'$C_v\ (J/K \cdot mol)$', fontweight='bold', fontsize=f_label, labelpad=10)
+                ax_Cv.axhline(d["dp_limit"], color=d["color"], linestyle='--', linewidth=line_w/1.5, alpha=0.7)
+        ax_Cv.set_ylabel(r'$\mathbf{C_v\ (J/K \cdot mol)}$', fontweight='bold', fontsize=f_label, labelpad=10)
         ax_Cv.set_ylim(cv_min, cv_max)
         ax_Cv.yaxis.set_major_locator(MultipleLocator(cv_step))
-        ax_Cv.text(0.05, 0.95, "(c)", transform=ax_Cv.transAxes, fontsize=f_label, fontweight='bold', va='top')
+        ax_Cv.text(0.05, 0.95, r"\textbf{(c)}", transform=ax_Cv.transAxes, fontsize=f_panel, fontweight='bold', va='top')
 
         # 4. E (İç Enerji)
         for d in datasets:
-            ax_E.plot(d["df"]['T'], d["df"]['E'], color=d["color"], linewidth=3.0, label=d["label"])
-        ax_E.set_ylabel(r'$E\ (kJ/mol)$', fontweight='bold', fontsize=f_label, labelpad=10)
+            ax_E.plot(d["df"]['T'], d["df"]['E'], color=d["color"], linewidth=line_w, label=d["label"])
+        ax_E.set_ylabel(r'$\mathbf{E\ (kJ/mol)}$', fontweight='bold', fontsize=f_label, labelpad=10)
         ax_E.set_ylim(e_min, e_max)
         ax_E.yaxis.set_major_locator(MultipleLocator(e_step))
-        ax_E.text(0.05, 0.95, "(d)", transform=ax_E.transAxes, fontsize=f_label, fontweight='bold', va='top')
+        ax_E.text(0.05, 0.95, r"\textbf{(d)}", transform=ax_E.transAxes, fontsize=f_panel, fontweight='bold', va='top')
 
         # --- ORTAK EKSEN VE GÖRÜNÜM AYARLARI ---
         for ax in axes.flat:
-            ax.set_xlabel(r'$T\ (K)$', fontweight='bold', fontsize=f_label, labelpad=10)
+            ax.set_xlabel(r'$\mathbf{Temperature\ (K)}$', fontweight='bold', fontsize=f_label, labelpad=10)
             ax.set_xlim(t_min, t_max)
             ax.xaxis.set_major_locator(MultipleLocator(t_step))
             ax.xaxis.set_minor_locator(AutoMinorLocator(2))
             ax.yaxis.set_minor_locator(AutoMinorLocator(2))
             
-            # Üst ve Sağ Ticks (Çentikler) Kapatıldı, Sadece Çerçeve Kaldı
-            ax.tick_params(axis='both', which='major', labelsize=f_tick, direction='in', length=8, width=2.0, top=False, right=False)
-            ax.tick_params(axis='both', which='minor', direction='in', length=4, width=1.5, top=False, right=False)
+            # Üst ve Sağ Ticks (Çentikler) Kapatıldı, Rakamlar Bold Yapıldı
+            ax.tick_params(axis='both', which='major', labelsize=f_tick, direction='in', length=8, width=frame_w, top=False, right=False)
+            ax.tick_params(axis='both', which='minor', direction='in', length=4, width=frame_w/1.5, top=False, right=False)
             
+            # Etiketleri Koyu (Bold) Yapma
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontweight('bold')
+                
+            # Çerçeve Kalınlıkları (Spines)
             for spine in ax.spines.values():
-                spine.set_linewidth(2.0)
-                spine.set_visible(True) # Çerçeveleri her yönden görünür kıldık
+                spine.set_linewidth(frame_w)
+                spine.set_visible(True) 
 
         # Lejant sadece (a) paneline (F) eklenir
         ax_F.legend(loc='best', frameon=False, prop={'weight':'bold', 'size':f_leg})
