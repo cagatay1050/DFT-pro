@@ -174,7 +174,7 @@ with st.sidebar.expander("🎨 Kapsam Grafik Ayarları (OriginLab TarzıZ)", exp
     })
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Çağatay Yamçıçıer Modüller", layout="wide", page_icon="⚛️")
+st.set_page_config(page_title="Çağatay Yamçıçıer ", layout="wide", page_icon="⚛️")
 
 # (Buradan itibaren senin menü ve elif blokların eskisi gibi devam edecek...)
 # --- YAN MENÜ (SIDEBAR) ---
@@ -748,7 +748,7 @@ elif secim == "🔥 Termodinamik (VDOS)":
         ax1.xaxis.set_major_locator(MultipleLocator(p_x_step))
         ax1.xaxis.set_minor_locator(AutoMinorLocator(2))
 
-        # Y Eksenleri Dinamik Ayarları
+        # Y Eksenleri Dinamik Ayarlarıas
         ax1.set_ylim(p_y1_min, p_y1_max)
         ax2.set_ylim(p_y2_min, p_y2_max)
 
