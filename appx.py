@@ -15,16 +15,6 @@ from itertools import combinations
 # 2. TEMEL VERİ BİLİMİ VE WEB ARAYÜZÜ
 # ==========================================
 import streamlit as st
-
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-
-@st.cache_data
-def cached_read_csv(filepath, **kwargs):
-    return cached_read_csv(filepath, **kwargs)
-
-
 import numpy as np
 import pandas as pd
 import requests
@@ -174,7 +164,7 @@ with st.sidebar.expander("🎨 Kapsam Grafik Ayarları (OriginLab TarzıZ)", exp
     })
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Çağatay Yamçıçıer ", layout="wide", page_icon="⚛️")
+st.set_page_config(page_title="Çağatay Yamçıçıer Modüller", layout="wide", page_icon="⚛️")
 
 # (Buradan itibaren senin menü ve elif blokların eskisi gibi devam edecek...)
 # --- YAN MENÜ (SIDEBAR) ---
@@ -659,7 +649,7 @@ elif secim == "🔥 Termodinamik (VDOS)":
             try:
                 
                 # Dosyayı okuma
-                df = cached_read_csv(uploaded_file, sep=r'\s+', comment='#', names=['Freq', 'Int']).dropna()
+                df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', names=['Freq', 'Int']).dropna()
                 df = df[df['Freq'] > 0]
                 
                 # Sabitler
@@ -748,7 +738,7 @@ elif secim == "🔥 Termodinamik (VDOS)":
         ax1.xaxis.set_major_locator(MultipleLocator(p_x_step))
         ax1.xaxis.set_minor_locator(AutoMinorLocator(2))
 
-        # Y Eksenleri Dinamik Ayarlarıas
+        # Y Eksenleri Dinamik Ayarları
         ax1.set_ylim(p_y1_min, p_y1_max)
         ax2.set_ylim(p_y2_min, p_y2_max)
 
@@ -771,10 +761,7 @@ elif secim == "🔥 Termodinamik (VDOS)":
         
         # Grafiği Ekrana Bas
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -912,10 +899,7 @@ elif secim == "⚡ Difüzyon (Arrhenius)":
 
         # Grafiği Ekrana Bas
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -949,7 +933,7 @@ elif secim == "📈 Kinetik (MSD & Difüzyon)":
                 # --- AKILLI DOSYA OKUYUCU (İmleci Başa Sarar) ---
                 def smart_load(uploaded_file):
                     uploaded_file.seek(0) # HATAYI ÇÖZEN HAYAT KURTARICI SATIR!
-                    df = cached_read_csv(uploaded_file, sep=r'\s+', comment='#', header=None, engine='python')
+                    df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', header=None, engine='python')
                     return df.dropna().reset_index(drop=True)
 
                 msd_df = smart_load(msd_file)
@@ -1086,10 +1070,7 @@ elif secim == "📈 Kinetik (MSD & Difüzyon)":
         col_m2.metric("Nihai Toplam Difüzyon Katsayısı (D)", f"{final_D:.4e} cm²/s")
         
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1145,7 +1126,7 @@ elif secim == "⚛️ Yapısal Analiz (RDF)":
         # Streamlit için özel okuma fonksiyonu
         def smart_load_st(uploaded_file):
             uploaded_file.seek(0)
-            df = cached_read_csv(uploaded_file, sep=r'\s+', header=None, comment='#', engine='python')
+            df = pd.read_csv(uploaded_file, sep=r'\s+', header=None, comment='#', engine='python')
             data = pd.DataFrame({'X': pd.to_numeric(df.iloc[:, 0], errors='coerce'),
                                  'Y': pd.to_numeric(df.iloc[:, -1], errors='coerce')})
             return data.dropna().reset_index(drop=True)
@@ -1286,10 +1267,7 @@ elif secim == "⚛️ Yapısal Analiz (RDF)":
 
         # --- EKRANA BASMA ---
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1344,7 +1322,7 @@ elif secim == "🎵 Titreşim Spektrumu (VDoS)":
                 
                 def smart_load(uploaded_file):
                     uploaded_file.seek(0)
-                    df = cached_read_csv(uploaded_file, sep=r'\s+', comment='#', names=['Freq', 'Int'])
+                    df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', names=['Freq', 'Int'])
                     return df.dropna().query('Freq >= 0').reset_index(drop=True)
 
                 total_df = smart_load(total_file)
@@ -1523,10 +1501,7 @@ elif secim == "🎵 Titreşim Spektrumu (VDoS)":
 
         # Ekrana Basma
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # 💾 İNDİRME BÖLÜMÜ (DPI SEÇİMİ EKLENDİ)
         st.markdown("### 📥 Grafiği İndir")
@@ -1602,7 +1577,7 @@ elif secim == "📉 Parçalanma Termodinamiği (T_des)":
                 
                 # VDOS OKUMA VE ZPE / ENTROPİ HESABI
                 vdos_file.seek(0)
-                df = cached_read_csv(vdos_file, sep=r'\s+', comment='#', names=['Freq', 'Int']).dropna()
+                df = pd.read_csv(vdos_file, sep=r'\s+', comment='#', names=['Freq', 'Int']).dropna()
                 df = df[df['Freq'] > 0]
                 
                 freq = df['Freq'].values * 1e12  
@@ -1791,10 +1766,7 @@ elif secim == "📉 Parçalanma Termodinamiği (T_des)":
 
         # Ekrana Basma
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1865,7 +1837,7 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)":
             for item in temp_aimd_data:
                 if item["file"] is not None:
                     item["file"].seek(0)
-                    df = cached_read_csv(item["file"], sep=r'\s+')
+                    df = pd.read_csv(item["file"], sep=r'\s+')
                     
                     # Zaman birimi düzeltmesi
                     if 'Time(ps)' in df.columns and 'Time(fs)' not in df.columns:
@@ -1988,10 +1960,7 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)":
 
         # Ekrana Basma
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -2267,10 +2236,7 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
 
             # Ekrana Basma
             st.pyplot(fig)
-            try:
-                plt.close(fig)
-            except:
-                pass
+            plt.close(fig)
             
             # İndirme Butonu
             buf = io.BytesIO()
@@ -2594,10 +2560,7 @@ elif secim == "⛰️ NEB Enerji Bariyeri (Energy Profile)":
         col_m3.metric("Reaksiyon Enerjisi (ΔE)", f"{metrics['Delta_E']:.4f} eV")
 
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
@@ -5414,7 +5377,7 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                 # Akıllı Dosya Okuyucu
                 def smart_load(uploaded_file):
                     uploaded_file.seek(0)
-                    df = cached_read_csv(uploaded_file, sep=r'\s+', comment='#', header=None, engine='python')
+                    df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', header=None, engine='python')
                     return df.dropna().reset_index(drop=True)
 
                 processed_data = []
@@ -5602,10 +5565,7 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
 
         plt.tight_layout(pad=3.0, w_pad=4.0)
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -5668,7 +5628,7 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
             for item in temp_aimd_data:
                 if item["file"] is not None:
                     item["file"].seek(0)
-                    df = cached_read_csv(item["file"], sep=r'\s+', engine='python')
+                    df = pd.read_csv(item["file"], sep=r'\s+', engine='python')
                     
                     # 1. ZAMAN (fs)
                     if 'Time(fs)' not in df.columns:
@@ -5861,10 +5821,7 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
 
         # Ekrana Basma
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu (Seçilen DPI değerine göre)
         buf = io.BytesIO()
@@ -6069,10 +6026,7 @@ elif secim == "🎶 Fonon Band Yapısı":
 
                 plt.tight_layout()
                 st.pyplot(fig)
-                try:
-                    plt.close(fig)
-                except:
-                    pass
+                plt.close(fig)
 
                 # --- 6. İNDİRME BUTONU ---
                 buf = io.BytesIO()
@@ -6140,7 +6094,7 @@ elif secim == "🎵 Titreşim Spektrumu(VDoS) Grafikli":
                 # Streamlit bellek okuyucusu
                 def smart_load(uploaded_file):
                     uploaded_file.seek(0)
-                    df = cached_read_csv(uploaded_file, sep=r'\s+', comment='#', names=['Freq', 'Int'])
+                    df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', names=['Freq', 'Int'])
                     return df.dropna().query('Freq >= 0').reset_index(drop=True)
 
                 total_df = smart_load(total_file)
@@ -6292,10 +6246,7 @@ elif secim == "🎵 Titreşim Spektrumu(VDoS) Grafikli":
 
         # Ekrana Basma
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -6349,7 +6300,7 @@ elif secim == "📍 Çoklu Sıcaklık RDF (Overlay)":
         # Senin o harika iki sütunlu akıllı okuma fonksiyonun
         def smart_load_st(uploaded_file):
             uploaded_file.seek(0)
-            df = cached_read_csv(uploaded_file, sep=r'\s+', header=None, comment='#', engine='python')
+            df = pd.read_csv(uploaded_file, sep=r'\s+', header=None, comment='#', engine='python')
             data = pd.DataFrame({
                 'X': pd.to_numeric(df.iloc[:, 0], errors='coerce'),
                 'Y': pd.to_numeric(df.iloc[:, 1], errors='coerce') 
@@ -6493,10 +6444,7 @@ elif secim == "📍 Çoklu Sıcaklık RDF (Overlay)":
         
         plt.tight_layout()
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # 📥 İNDİRME MOTORU
         st.markdown("### 📥 Makale İçin İndir")
@@ -6550,7 +6498,7 @@ elif secim == "📍 Çoklu Sıcaklık VDoS (Overlay)":
         
         def smart_load_vdos(uploaded_file):
             uploaded_file.seek(0)
-            df = cached_read_csv(uploaded_file, sep=r'\s+', comment='#', names=['Freq', 'Int'])
+            df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', names=['Freq', 'Int'])
             return df.dropna().query('Freq >= 0').reset_index(drop=True)
 
         for i, data in enumerate(datasets_raw):
@@ -6662,10 +6610,7 @@ elif secim == "📍 Çoklu Sıcaklık VDoS (Overlay)":
         
         # Önce ekrana bas
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
 
         # 📥 İNDİRME MOTORU
         st.markdown("### 📥 Makale İçin İndir")
@@ -6716,7 +6661,7 @@ elif secim == "🎨 Master Grafik Birleştirici (Origin Klonu)":
                 try:
                     uploaded_file.seek(0)
                     # YENİ EKLENEN KISIM: sep=r'\s+' (Boşlukları böler) ve comment='#' (# satırlarını otomatik atlar)
-                    df = cached_read_csv(uploaded_file, sep=r'\s+', engine='python', skiprows=skip_r, header=None, comment='#')
+                    df = pd.read_csv(uploaded_file, sep=r'\s+', engine='python', skiprows=skip_r, header=None, comment='#')
                     
                     with c_cols:
                         x_col = st.number_input("X Sütunu (İndeks)", value=0, min_value=0, max_value=len(df.columns)-1, key=f"x_{i}")
@@ -6868,10 +6813,7 @@ elif secim == "🎨 Master Grafik Birleştirici (Origin Klonu)":
 
                 # Grafiği Ekranda Göster
                 st.pyplot(fig)
-                try:
-                    plt.close(fig)
-                except:
-                    pass
+                plt.close(fig)
 
                 # Çıktı Alma Bölümü
                 st.markdown("### 📥 Yüksek Çözünürlüklü Dışa Aktar")
@@ -7525,10 +7467,7 @@ elif secim == "📈 Murnaghan EOS Fit (CASTEP)":
                     
                     plt.tight_layout()
                     st.pyplot(fig)
-                    try:
-                        plt.close(fig)
-                    except:
-                        pass
+                    plt.close(fig)
 
                     # --- İNDİRME MOTORU ---
                     buf = io.BytesIO()
@@ -7961,10 +7900,7 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
 
                 plt.tight_layout()
                 st.pyplot(fig)
-                try:
-                    plt.close(fig)
-                except:
-                    pass
+                plt.close(fig)
 
                 # 4. İNDİRME BÖLÜMÜ
                 st.markdown("### 📥 Makale Formatında İndir")
@@ -8142,10 +8078,7 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             ax.axis('off')
             
             st.pyplot(fig)
-            try:
-                plt.close(fig)
-            except:
-                pass
+            plt.close(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
 ####################Dergi Bulucu###############################
 #
@@ -8384,7 +8317,7 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
             try:
                 def smart_load(uploaded_file, spin):
                     uploaded_file.seek(0)
-                    df = cached_read_csv(uploaded_file, sep=r'\s+', comment='#', header=None, engine='python')
+                    df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', header=None, engine='python')
                     
                     if spin and df.shape[1] >= 3:
                         df_clean = pd.DataFrame({
@@ -8568,10 +8501,7 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
 
         plt.tight_layout()
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme İşlemi
         buf = io.BytesIO()
@@ -8772,10 +8702,7 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         
         # 1. Grafiği Streamlit Ekranına Standart Çiz
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
 
         # 2. Arka Planda Gerçek 600 DPI Bellek Tamponu Oluştur (YENİ)
         fn_buf = io.BytesIO()
@@ -8858,10 +8785,7 @@ elif secim == "📈 Convex Hull Analizi":
                     
                     # Matplotlib figürünü Streamlit'e aktar
                     st.pyplot(plot_fig)
-                    try:
-                        plt.close(plot_fig)
-                    except:
-                        pass
+                    plt.close(plot_fig)
                     
                     # Açık kalan plot objesini temizle (bellek sızıntısını önlemek için)
                     plt.close(plot_fig)
@@ -8943,7 +8867,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
             if data["file"] is not None:
                 try:
                     data["file"].seek(0)
-                    df = cached_read_csv(data["file"], sep=r'\s+', comment='#', names=['T', 'F', 'S', 'Cv', 'E'])
+                    df = pd.read_csv(data["file"], sep=r'\s+', comment='#', names=['T', 'F', 'S', 'Cv', 'E'])
                     df = df.dropna().apply(pd.to_numeric, errors='coerce').dropna()
                     
                     if not df.empty:
@@ -9091,10 +9015,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
         ax_F.legend(loc='best', frameon=False, prop={'weight':'bold', 'size':f_leg})
 
         st.pyplot(fig)
-        try:
-            plt.close(fig)
-        except:
-            pass
+        plt.close(fig)
         
         # İndirme Butonu
         c_dpi1, c_dpi2 = st.columns([1, 3])
