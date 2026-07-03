@@ -6847,8 +6847,8 @@ elif secim == "🎨 Master Grafik Birleştirici (Origin Klonu)":
                     # SVG İndirme (Vektörel - Adobe Illustrator/Inkscape için)
                     buf_svg = io.BytesIO()
                     fig.savefig(buf_svg, format="svg", bbox_inches='tight')
-                plt.close(fig)
                     st.download_button(label="SVG Olarak İndir (Vektörel)", data=buf_svg.getvalue(), file_name="Master_Plot.svg", mime="image/svg+xml", use_container_width=True)    
+                plt.close(fig)
 # ==========================================
 # MODÜL: formasyon enerji
 # ==========================================    
@@ -7930,8 +7930,8 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
                 with c_d2:
                     buf_svg = io.BytesIO()
                     fig.savefig(buf_svg, format="svg", bbox_inches='tight')
-                plt.close(fig)
                     st.download_button("SVG İndir (Vektörel)", buf_svg.getvalue(), "Band_Structure.svg", "image/svg+xml", use_container_width=True)
+                plt.close(fig)
         else:
             st.info("Lütfen '1. Veri ve Fermi Seviyesi' sekmesinden bant verinizi yükleyin.")
  # ==========================================
@@ -9043,7 +9043,6 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
             st.markdown("<br>", unsafe_allow_html=True)
             buf = io.BytesIO()
             fig.savefig(buf, format="png", bbox_inches='tight', dpi=dpi_secim)
-        plt.close(fig)
             st.download_button(
                 label=f"📥 Paneli İndir (PNG, {dpi_secim} DPI)", 
                 data=buf.getvalue(), 
@@ -9051,3 +9050,4 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
                 mime="image/png",
                 use_container_width=True
             )
+        plt.close(fig)
