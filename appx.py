@@ -15,6 +15,8 @@ from itertools import combinations
 # 2. TEMEL VERİ BİLİMİ VE WEB ARAYÜZÜ
 # ==========================================
 import streamlit as st
+st.set_page_config(page_title="Çağatay Yamçıçıer Modüller", layout="wide", page_icon="⚛️")
+
 import numpy as np
 import pandas as pd
 import requests
@@ -28,10 +30,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.ticker as ticker
 from matplotlib.ticker import MultipleLocator, AutoMinorLocator
-from pymatgen.ext.matproj import MPRester
-from pymatgen.io.vasp import Vasprun
-from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
-from pymatgen.entries.computed_entries import ComputedEntry
+# LAZY: from pymatgen.ext.matproj import MPRester
+# LAZY: from pymatgen.io.vasp import Vasprun
+# LAZY: from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
+# LAZY: from pymatgen.entries.computed_entries import ComputedEntry
 # ==========================================
 # 4. MATEMATİK, FİT VE İSTATİSTİK (SciPy)
 # ==========================================
@@ -40,18 +42,35 @@ from scipy.integrate import trapezoid
 from scipy.interpolate import Akima1DInterpolator
 from scipy.optimize import curve_fit
 
+# === LAZY IMPORT HELPER ===
+def _lazy_import_pymatgen():
+    from pymatgen.ext.matproj import MPRester
+    from pymatgen.io.vasp import Vasprun
+    from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
+    from pymatgen.entries.computed_entries import ComputedEntry
+    return MPRester, Vasprun, PhaseDiagram, PDPlotter, ComputedEntry
+
+def _lazy_import_ase():
+    from ase import Atom
+    from ase.io import read, write
+    from ase.constraints import FixAtoms
+    from ase.mep import NEB
+    from ase.geometry import find_mic
+    return Atom, read, write, FixAtoms, NEB, find_mic
+# === END LAZY IMPORT HELPER ===
+
 # ==========================================
 # 5. MALZEME BİLİMİ VE KİMYA (ASE & Pymatgen)
 # ==========================================
-from ase import Atom
-from ase.io import read, write
-from ase.constraints import FixAtoms
-from ase.mep import NEB
-from ase.geometry import find_mic
+# LAZY: from ase import Atom
+# LAZY: from ase.io import read, write
+# LAZY: from ase.constraints import FixAtoms
+# LAZY: from ase.mep import NEB
+# LAZY: from ase.geometry import find_mic
 
 from pymatgen.core.periodic_table import Element
 from pymatgen.core.composition import Composition
-import plotly.graph_objects as go
+# LAZY: import plotly.graph_objects as go
 
 # ==========================================
 # AKADEMİK GRAFİK FONT AYARLARI (GLOBAL)
@@ -164,7 +183,7 @@ with st.sidebar.expander("🎨 Kapsam Grafik Ayarları (OriginLab TarzıZ)", exp
     })
 
 # --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Çağatay Yamçıçıer Modüller", layout="wide", page_icon="⚛️")
+
 
 # (Buradan itibaren senin menü ve elif blokların eskisi gibi devam edecek...)
 # --- YAN MENÜ (SIDEBAR) ---
@@ -761,11 +780,11 @@ elif secim == "🔥 Termodinamik (VDOS)":
         
         # Grafiği Ekrana Bas
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight')
+        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla Grafiği İndir (PNG)",
             data=buf.getvalue(),
@@ -899,11 +918,11 @@ elif secim == "⚡ Difüzyon (Arrhenius)":
 
         # Grafiği Ekrana Bas
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight')
+        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla Grafiği İndir (PNG)",
             data=buf.getvalue(),
@@ -1070,11 +1089,11 @@ elif secim == "📈 Kinetik (MSD & Difüzyon)":
         col_m2.metric("Nihai Toplam Difüzyon Katsayısı (D)", f"{final_D:.4e} cm²/s")
         
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight')
+        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla Paneli İndir (PNG)",
             data=buf.getvalue(),
@@ -1267,11 +1286,11 @@ elif secim == "⚛️ Yapısal Analiz (RDF)":
 
         # --- EKRANA BASMA ---
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
+        plt.close(fig)
         st.download_button(
             label=f"📥 {n_valid} Panelli RDF Grafiğini İndir (PNG)",
             data=buf.getvalue(),
@@ -1766,11 +1785,11 @@ elif secim == "📉 Parçalanma Termodinamiği (T_des)":
 
         # Ekrana Basma
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight')
+        plt.close(fig)
         
         clean_name = mat_baslik.replace('\\', '').replace('{', '').replace('}', '').replace('mathbf', '').replace('_', '')
         dl_name = "Single_Pathway" if len(results) == 1 else "All_Pathways"
@@ -1960,11 +1979,11 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)":
 
         # Ekrana Basma
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
+        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla AIMD Grafiğini İndir (PNG)",
             data=buf.getvalue(),
@@ -2155,7 +2174,7 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
             # 🎨 ÇİZİM BÖLÜMÜ
             
             # --- TÜM FONT AYARLARINI TIMES NEW ROMAN YAPMA ---
-            import matplotlib as mpl
+            # (redundant) import matplotlib as mpl
             mpl.rcParams['font.family'] = 'serif'
             mpl.rcParams['font.serif'] = ['Times New Roman']
             mpl.rcParams['mathtext.fontset'] = 'custom'
@@ -2236,11 +2255,11 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
 
             # Ekrana Basma
             st.pyplot(fig)
-            plt.close(fig)
             
             # İndirme Butonu
             buf = io.BytesIO()
             fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
+            plt.close(fig)
             st.download_button(
                 label="📥 Son Ayarlarla Bant Grafiğini İndir (PNG - 600 DPI)",
                 data=buf.getvalue(),
@@ -2560,10 +2579,10 @@ elif secim == "⛰️ NEB Enerji Bariyeri (Energy Profile)":
         col_m3.metric("Reaksiyon Enerjisi (ΔE)", f"{metrics['Delta_E']:.4f} eV")
 
         st.pyplot(fig)
-        plt.close(fig)
         
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
+        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla NEB Grafiğini İndir (PNG)",
             data=buf.getvalue(),
@@ -5565,11 +5584,11 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
 
         plt.tight_layout(pad=3.0, w_pad=4.0)
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight', dpi=300)
+        plt.close(fig)
         st.download_button(
             label="📥 A-Sınıfı Yayın Grafiğini İndir (PNG, 300 DPI)",
             data=buf.getvalue(),
@@ -5821,11 +5840,11 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
 
         # Ekrana Basma
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu (Seçilen DPI değerine göre)
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=p_dpi, bbox_inches='tight')
+        plt.close(fig)
         
         st.download_button(
             label=f"📥 AIMD Grafiğini İndir (PNG, {p_dpi} DPI)",
@@ -6026,11 +6045,11 @@ elif secim == "🎶 Fonon Band Yapısı":
 
                 plt.tight_layout()
                 st.pyplot(fig)
-                plt.close(fig)
 
                 # --- 6. İNDİRME BUTONU ---
                 buf = io.BytesIO()
                 fig.savefig(buf, format="png", dpi=p_dpi, bbox_inches='tight')
+                plt.close(fig)
                 
                 st.download_button(
                     label=f"📥 Fonon Band Grafiğini İndir (PNG, {p_dpi} DPI)",
@@ -6246,11 +6265,11 @@ elif secim == "🎵 Titreşim Spektrumu(VDoS) Grafikli":
 
         # Ekrana Basma
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
+        plt.close(fig)
         
         clean_name = malzeme_adi.replace('\\', '').replace('{', '').replace('}', '').replace('mathbf', '').replace('_', '')
         st.download_button(
@@ -6813,7 +6832,6 @@ elif secim == "🎨 Master Grafik Birleştirici (Origin Klonu)":
 
                 # Grafiği Ekranda Göster
                 st.pyplot(fig)
-                plt.close(fig)
 
                 # Çıktı Alma Bölümü
                 st.markdown("### 📥 Yüksek Çözünürlüklü Dışa Aktar")
@@ -6829,6 +6847,7 @@ elif secim == "🎨 Master Grafik Birleştirici (Origin Klonu)":
                     # SVG İndirme (Vektörel - Adobe Illustrator/Inkscape için)
                     buf_svg = io.BytesIO()
                     fig.savefig(buf_svg, format="svg", bbox_inches='tight')
+                plt.close(fig)
                     st.download_button(label="SVG Olarak İndir (Vektörel)", data=buf_svg.getvalue(), file_name="Master_Plot.svg", mime="image/svg+xml", use_container_width=True)    
 # ==========================================
 # MODÜL: formasyon enerji
@@ -6912,13 +6931,13 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                     st.session_state.main_db[edit_software][element_to_edit] = new_energy
                     save_to_database(st.session_state.main_db)
                     st.success("✅ Güncellendi!")
-                    st.rerun()
+                    pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
             with btn_col2:
                 if st.button("Kaydı Sil"):
                     del st.session_state.main_db[edit_software][element_to_edit]
                     save_to_database(st.session_state.main_db)
                     st.warning("🗑️ Silindi!")
-                    st.rerun()
+                    pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
 
     st.markdown("---")
 
@@ -6976,7 +6995,7 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                         z_val_p1 = n_cell / formula_atoms_p1
                         st.session_state.main_db[software_choice][elem] = e_tot / z_val_p1
                         save_to_database(st.session_state.main_db)
-                        st.rerun()
+                        pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
 
         if path1_ready:
             st.markdown("#### 📊 Path 1 Sonuçları")
@@ -7042,7 +7061,7 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                                 z_val_p2 = n_cell_p2 / formula_atoms_p2
                                 st.session_state.main_db[software_choice][missing] = e_tot_p2 / z_val_p2
                                 save_to_database(st.session_state.main_db)
-                                st.rerun()
+                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
                 
                 if path2_ready:
                     st.markdown("#### 📊 Path 2 Sonuçları")
@@ -7228,11 +7247,11 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                         if col_btn1.button("✨ Akıcılaştır", key=f"akici_tr_{alt_key}"):
                             with st.spinner("Düzenleniyor..."):
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], "Daha akıcı ve doğal hale getir")
-                                st.rerun()
+                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
                         if col_btn2.button("🔬 Akademikleştir", key=f"akad_tr_{alt_key}"):
                             with st.spinner("Düzenleniyor..."):
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], "Daha bilimsel ve üst düzey akademik bir dil kullan")
-                                st.rerun()
+                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
                         
                         tweak_opt = st.selectbox("Mod Değiştir...", ["Seçiniz...", "Otoriter & Ağır Yap", "Yalınlaştır", "Kısa & Öz Yap", "Sunum Dili"], key=f"sel_tr_{alt_key}")
                         if tweak_opt != "Seçiniz...":
@@ -7244,7 +7263,7 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                                     "Sunum Dili": "Bu metni sanki uluslararası bir kongrede sahnede sunum yapıyormuş gibi, ilham verici tonda yeniden yaz."
                                 }
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], instructions[tweak_opt])
-                                st.rerun()
+                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
 
                     # İNGİLİZCE SEKME
                     with tab_en:
@@ -7254,11 +7273,11 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                         if col_btn1_en.button("✨ Fluent", key=f"akici_en_{alt_key}"):
                             with st.spinner("Editing..."):
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], "Make it more fluent and natural")
-                                st.rerun()
+                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
                         if col_btn2_en.button("🔬 Academic", key=f"akad_en_{alt_key}"):
                             with st.spinner("Editing..."):
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], "Use more scientific and high-level academic language")
-                                st.rerun()
+                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
                                 
                         tweak_opt_en = st.selectbox("Change Mode...", ["Select...", "Authoritative & Heavy", "Simplify", "Short & Concise", "Presentation Tone"], key=f"sel_en_{alt_key}")
                         if tweak_opt_en != "Select...":
@@ -7270,7 +7289,7 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                                     "Presentation Tone": "Rewrite this text in an inspiring, captivating tone as if giving a presentation on stage at an international conference."
                                 }
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], instructions_en[tweak_opt_en])
-                                st.rerun()
+                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
         else:
             st.info("👈 Lütfen sol tarafa metninizi yapıştırın ve üret butonuna basın.")
                             # ==========================================
@@ -7467,11 +7486,11 @@ elif secim == "📈 Murnaghan EOS Fit (CASTEP)":
                     
                     plt.tight_layout()
                     st.pyplot(fig)
-                    plt.close(fig)
 
                     # --- İNDİRME MOTORU ---
                     buf = io.BytesIO()
                     fig.savefig(buf, format="png", bbox_inches='tight', dpi=dpi_val)
+                    plt.close(fig)
                     st.download_button(
                         label=f"📥 Murnaghan Grafiğini İndir (PNG, {dpi_val} DPI)",
                         data=buf.getvalue(),
@@ -7545,7 +7564,7 @@ def get_elements_data():
 # 2. BAŞLANGIÇ VE ANA SEÇİM KONTROLÜ
 # ==========================================
 # Element listesini bir kez çağırıp hafızaya alıyoruz
-tam_element_listesi = list(get_elements_data().keys())
+# MOVED INSIDE ELIF: tam_element_listesi = list(get_elements_data().keys())
 
 # NOT: Eğer kendi menün varsa secim değişkenini oradan almalısın. 
 # Ama elif mantığının çalışması için mutlaka bir "if" başlatmalıyız.
@@ -7900,7 +7919,6 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
 
                 plt.tight_layout()
                 st.pyplot(fig)
-                plt.close(fig)
 
                 # 4. İNDİRME BÖLÜMÜ
                 st.markdown("### 📥 Makale Formatında İndir")
@@ -7912,6 +7930,7 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
                 with c_d2:
                     buf_svg = io.BytesIO()
                     fig.savefig(buf_svg, format="svg", bbox_inches='tight')
+                plt.close(fig)
                     st.download_button("SVG İndir (Vektörel)", buf_svg.getvalue(), "Band_Structure.svg", "image/svg+xml", use_container_width=True)
         else:
             st.info("Lütfen '1. Veri ve Fermi Seviyesi' sekmesinden bant verinizi yükleyin.")
@@ -8501,11 +8520,11 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
 
         plt.tight_layout()
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme İşlemi
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
+        plt.close(fig)
         st.download_button(label="📥 DOS Grafiğini İndir (600 DPI)", 
                           data=buf.getvalue(), 
                           file_name="DOS_PDOS_Origin.png", 
@@ -8514,10 +8533,10 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
 # MODÜL: CASTEP LST/QST KİNETİK ANALİZ
 # ==========================================
 elif secim == "🔋 CASTEP Kinetik Analiz":
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
+    # (redundant) import pandas as pd
+    # (redundant) import numpy as np
+    # (redundant) import matplotlib.pyplot as plt
+    # (redundant) import matplotlib as mpl
     from matplotlib.ticker import MultipleLocator
     from scipy.interpolate import PchipInterpolator
     import re
@@ -8702,11 +8721,11 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         
         # 1. Grafiği Streamlit Ekranına Standart Çiz
         st.pyplot(fig)
-        plt.close(fig)
 
         # 2. Arka Planda Gerçek 600 DPI Bellek Tamponu Oluştur (YENİ)
         fn_buf = io.BytesIO()
         fig.savefig(fn_buf, format="png", dpi=dpi_val, bbox_inches='tight')
+        plt.close(fig)
         fn_buf.seek(0)
         
         # 3. İndirme Butonunu Ekrana Bas (YENİ)
@@ -8852,7 +8871,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
     # Fiziksel Özellikler Özet Tablosu
     if len(summary_table_data) > 0:
         st.markdown("### 📊 Fiziksel Analiz Tablosu")
-        import pandas as pd
+        # (redundant) import pandas as pd
         df_summary = pd.DataFrame(summary_table_data)
         st.table(df_summary)
 
@@ -8860,7 +8879,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
 
     # --- 2. VERİ OKUMA ---
     if st.button("🚀 Verileri Oku ve Grafiği Hazırla", type="primary", use_container_width=True):
-        import numpy as np
+        # (redundant) import numpy as np
         valid_datasets = []
         
         for data in thermo_data_inputs:
@@ -8941,7 +8960,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
                 e_step = st.number_input("E Adım", value=100.0, step=25.0)
 
         # 🎨 ÇİZİM BÖLÜMÜ
-        import matplotlib.pyplot as plt
+        # (redundant) import matplotlib.pyplot as plt
         from matplotlib.ticker import MultipleLocator, AutoMinorLocator
         import io
 
@@ -9015,7 +9034,6 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
         ax_F.legend(loc='best', frameon=False, prop={'weight':'bold', 'size':f_leg})
 
         st.pyplot(fig)
-        plt.close(fig)
         
         # İndirme Butonu
         c_dpi1, c_dpi2 = st.columns([1, 3])
@@ -9025,6 +9043,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
             st.markdown("<br>", unsafe_allow_html=True)
             buf = io.BytesIO()
             fig.savefig(buf, format="png", bbox_inches='tight', dpi=dpi_secim)
+        plt.close(fig)
             st.download_button(
                 label=f"📥 Paneli İndir (PNG, {dpi_secim} DPI)", 
                 data=buf.getvalue(), 
