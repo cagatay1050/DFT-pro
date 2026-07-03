@@ -1,5 +1,4 @@
-import streamlit as st
-st.set_page_config(page_title="Cagatay Yamcicier Moduller", layout="wide", page_icon="⚛️")
+# ==========================================
 # 1. STANDART PYTHON KÜTÜPHANELERİ
 # ==========================================
 import os
@@ -15,6 +14,7 @@ from itertools import combinations
 # ==========================================
 # 2. TEMEL VERİ BİLİMİ VE WEB ARAYÜZÜ
 # ==========================================
+import streamlit as st
 import numpy as np
 import pandas as pd
 import requests
@@ -164,6 +164,7 @@ with st.sidebar.expander("🎨 Kapsam Grafik Ayarları (OriginLab TarzıZ)", exp
     })
 
 # --- SAYFA AYARLARI ---
+st.set_page_config(page_title="Çağatay Yamçıçıer Modüller", layout="wide", page_icon="⚛️")
 
 # (Buradan itibaren senin menü ve elif blokların eskisi gibi devam edecek...)
 # --- YAN MENÜ (SIDEBAR) ---
@@ -3168,16 +3169,6 @@ elif secim == "🧲 Elastik Sabitler (IBRION=6)":
     # ==========================================
 # MODÜL 19: HSE06 BANT YAPISI OTOMASYONU
 # ==========================================
-elif secim == "⚙️ Mekanik Özellikler (VELAS)":
-    import sys
-    if r"C:\\Users\\cagatay\\Desktop\\DFT-pro\\modules" not in sys.path:
-        sys.path.append(r"C:\\Users\\cagatay\\Desktop\\DFT-pro\\modules")
-    try:
-        from mekanik_ozellikler import draw_mekanik_ozellikler
-        draw_mekanik_ozellikler()
-    except Exception as e:
-        st.error(f"Mekanik Özellikler modülü yüklenirken hata oluştu: {e}")
-
 elif secim == "💎 HSE06 Bant Yapısı (Otomasyon)":
     st.header("HSE06 Hibrit Fonksiyonel Bant Yapısı İş Akışı")
     st.markdown("Geometri optimizasyonundan çıkan yapınızı primitive hücreye çeviren, k-yolunu oluşturan ve HSE06 için ağırlıksız (zero-weight) KPOINTS dosyasını Vaspkit ile otonom olarak hazırlayan araçtır.")
@@ -6905,13 +6896,13 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                     st.session_state.main_db[edit_software][element_to_edit] = new_energy
                     save_to_database(st.session_state.main_db)
                     st.success("✅ Güncellendi!")
-                    pass  # st.rerun() removed to prevent infinite loop
+                    st.rerun()
             with btn_col2:
                 if st.button("Kaydı Sil"):
                     del st.session_state.main_db[edit_software][element_to_edit]
                     save_to_database(st.session_state.main_db)
                     st.warning("🗑️ Silindi!")
-                    pass  # st.rerun() removed to prevent infinite loop
+                    st.rerun()
 
     st.markdown("---")
 
@@ -6969,7 +6960,7 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                         z_val_p1 = n_cell / formula_atoms_p1
                         st.session_state.main_db[software_choice][elem] = e_tot / z_val_p1
                         save_to_database(st.session_state.main_db)
-                        pass  # st.rerun() removed to prevent infinite loop
+                        st.rerun()
 
         if path1_ready:
             st.markdown("#### 📊 Path 1 Sonuçları")
@@ -7035,7 +7026,7 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                                 z_val_p2 = n_cell_p2 / formula_atoms_p2
                                 st.session_state.main_db[software_choice][missing] = e_tot_p2 / z_val_p2
                                 save_to_database(st.session_state.main_db)
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                 
                 if path2_ready:
                     st.markdown("#### 📊 Path 2 Sonuçları")
@@ -7221,11 +7212,11 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                         if col_btn1.button("✨ Akıcılaştır", key=f"akici_tr_{alt_key}"):
                             with st.spinner("Düzenleniyor..."):
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], "Daha akıcı ve doğal hale getir")
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                         if col_btn2.button("🔬 Akademikleştir", key=f"akad_tr_{alt_key}"):
                             with st.spinner("Düzenleniyor..."):
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], "Daha bilimsel ve üst düzey akademik bir dil kullan")
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                         
                         tweak_opt = st.selectbox("Mod Değiştir...", ["Seçiniz...", "Otoriter & Ağır Yap", "Yalınlaştır", "Kısa & Öz Yap", "Sunum Dili"], key=f"sel_tr_{alt_key}")
                         if tweak_opt != "Seçiniz...":
@@ -7237,7 +7228,7 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                                     "Sunum Dili": "Bu metni sanki uluslararası bir kongrede sahnede sunum yapıyormuş gibi, ilham verici tonda yeniden yaz."
                                 }
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], instructions[tweak_opt])
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
 
                     # İNGİLİZCE SEKME
                     with tab_en:
@@ -7247,11 +7238,11 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                         if col_btn1_en.button("✨ Fluent", key=f"akici_en_{alt_key}"):
                             with st.spinner("Editing..."):
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], "Make it more fluent and natural")
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                         if col_btn2_en.button("🔬 Academic", key=f"akad_en_{alt_key}"):
                             with st.spinner("Editing..."):
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], "Use more scientific and high-level academic language")
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                                 
                         tweak_opt_en = st.selectbox("Change Mode...", ["Select...", "Authoritative & Heavy", "Simplify", "Short & Concise", "Presentation Tone"], key=f"sel_en_{alt_key}")
                         if tweak_opt_en != "Select...":
@@ -7263,7 +7254,7 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                                     "Presentation Tone": "Rewrite this text in an inspiring, captivating tone as if giving a presentation on stage at an international conference."
                                 }
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], instructions_en[tweak_opt_en])
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
         else:
             st.info("👈 Lütfen sol tarafa metninizi yapıştırın ve üret butonuna basın.")
                             # ==========================================
