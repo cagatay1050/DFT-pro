@@ -1,4 +1,5 @@
-# ==========================================
+import streamlit as st
+st.set_page_config(page_title="Cagatay Yamcicier Moduller", layout="wide", page_icon="⚛️")
 # 1. STANDART PYTHON KÜTÜPHANELERİ
 # ==========================================
 import os
@@ -14,9 +15,6 @@ from itertools import combinations
 # ==========================================
 # 2. TEMEL VERİ BİLİMİ VE WEB ARAYÜZÜ
 # ==========================================
-import streamlit as st
-st.set_page_config(page_title="Çağatay Yamçıçıer Modüller", layout="wide", page_icon="⚛️")
-
 import numpy as np
 import pandas as pd
 import requests
@@ -30,10 +28,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.ticker as ticker
 from matplotlib.ticker import MultipleLocator, AutoMinorLocator
-# LAZY: from pymatgen.ext.matproj import MPRester
-# LAZY: from pymatgen.io.vasp import Vasprun
-# LAZY: from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
-# LAZY: from pymatgen.entries.computed_entries import ComputedEntry
+from pymatgen.ext.matproj import MPRester
+from pymatgen.io.vasp import Vasprun
+from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
+from pymatgen.entries.computed_entries import ComputedEntry
 # ==========================================
 # 4. MATEMATİK, FİT VE İSTATİSTİK (SciPy)
 # ==========================================
@@ -42,35 +40,18 @@ from scipy.integrate import trapezoid
 from scipy.interpolate import Akima1DInterpolator
 from scipy.optimize import curve_fit
 
-# === LAZY IMPORT HELPER ===
-def _lazy_import_pymatgen():
-    from pymatgen.ext.matproj import MPRester
-    from pymatgen.io.vasp import Vasprun
-    from pymatgen.analysis.phase_diagram import PhaseDiagram, PDPlotter
-    from pymatgen.entries.computed_entries import ComputedEntry
-    return MPRester, Vasprun, PhaseDiagram, PDPlotter, ComputedEntry
-
-def _lazy_import_ase():
-    from ase import Atom
-    from ase.io import read, write
-    from ase.constraints import FixAtoms
-    from ase.mep import NEB
-    from ase.geometry import find_mic
-    return Atom, read, write, FixAtoms, NEB, find_mic
-# === END LAZY IMPORT HELPER ===
-
 # ==========================================
 # 5. MALZEME BİLİMİ VE KİMYA (ASE & Pymatgen)
 # ==========================================
-# LAZY: from ase import Atom
-# LAZY: from ase.io import read, write
-# LAZY: from ase.constraints import FixAtoms
-# LAZY: from ase.mep import NEB
-# LAZY: from ase.geometry import find_mic
+from ase import Atom
+from ase.io import read, write
+from ase.constraints import FixAtoms
+from ase.mep import NEB
+from ase.geometry import find_mic
 
 from pymatgen.core.periodic_table import Element
 from pymatgen.core.composition import Composition
-# LAZY: import plotly.graph_objects as go
+import plotly.graph_objects as go
 
 # ==========================================
 # AKADEMİK GRAFİK FONT AYARLARI (GLOBAL)
@@ -183,7 +164,6 @@ with st.sidebar.expander("🎨 Kapsam Grafik Ayarları (OriginLab TarzıZ)", exp
     })
 
 # --- SAYFA AYARLARI ---
-
 
 # (Buradan itibaren senin menü ve elif blokların eskisi gibi devam edecek...)
 # --- YAN MENÜ (SIDEBAR) ---
@@ -2167,7 +2147,7 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
             # 🎨 ÇİZİM BÖLÜMÜ
             
             # --- TÜM FONT AYARLARINI TIMES NEW ROMAN YAPMA ---
-            # (redundant) import matplotlib as mpl
+            import matplotlib as mpl
             mpl.rcParams['font.family'] = 'serif'
             mpl.rcParams['font.serif'] = ['Times New Roman']
             mpl.rcParams['mathtext.fontset'] = 'custom'
@@ -3188,6 +3168,16 @@ elif secim == "🧲 Elastik Sabitler (IBRION=6)":
     # ==========================================
 # MODÜL 19: HSE06 BANT YAPISI OTOMASYONU
 # ==========================================
+elif secim == "⚙️ Mekanik Özellikler (VELAS)":
+    import sys
+    if r"C:\\Users\\cagatay\\Desktop\\DFT-pro\\modules" not in sys.path:
+        sys.path.append(r"C:\\Users\\cagatay\\Desktop\\DFT-pro\\modules")
+    try:
+        from mekanik_ozellikler import draw_mekanik_ozellikler
+        draw_mekanik_ozellikler()
+    except Exception as e:
+        st.error(f"Mekanik Özellikler modülü yüklenirken hata oluştu: {e}")
+
 elif secim == "💎 HSE06 Bant Yapısı (Otomasyon)":
     st.header("HSE06 Hibrit Fonksiyonel Bant Yapısı İş Akışı")
     st.markdown("Geometri optimizasyonundan çıkan yapınızı primitive hücreye çeviren, k-yolunu oluşturan ve HSE06 için ağırlıksız (zero-weight) KPOINTS dosyasını Vaspkit ile otonom olarak hazırlayan araçtır.")
@@ -6628,6 +6618,7 @@ elif secim == "📍 Çoklu Sıcaklık VDoS (Overlay)":
             st.download_button("Grafiği İndir (PNG)", data=buf.getvalue(), file_name=f"Overlay_VDOS.png", mime="image/png")
             
         # Ghosting'i (Hayalet Veriyi) kesin olarak önler
+        plt.close(fig)
     # ==========================================
 # MODÜL: MASTER GRAFİK BİRLEŞTİRİCİ (ORIGIN KLONU)
 # ==========================================
@@ -6914,13 +6905,13 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                     st.session_state.main_db[edit_software][element_to_edit] = new_energy
                     save_to_database(st.session_state.main_db)
                     st.success("✅ Güncellendi!")
-                    pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                    pass  # st.rerun() removed to prevent infinite loop
             with btn_col2:
                 if st.button("Kaydı Sil"):
                     del st.session_state.main_db[edit_software][element_to_edit]
                     save_to_database(st.session_state.main_db)
                     st.warning("🗑️ Silindi!")
-                    pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                    pass  # st.rerun() removed to prevent infinite loop
 
     st.markdown("---")
 
@@ -6978,7 +6969,7 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                         z_val_p1 = n_cell / formula_atoms_p1
                         st.session_state.main_db[software_choice][elem] = e_tot / z_val_p1
                         save_to_database(st.session_state.main_db)
-                        pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                        pass  # st.rerun() removed to prevent infinite loop
 
         if path1_ready:
             st.markdown("#### 📊 Path 1 Sonuçları")
@@ -7044,7 +7035,7 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                                 z_val_p2 = n_cell_p2 / formula_atoms_p2
                                 st.session_state.main_db[software_choice][missing] = e_tot_p2 / z_val_p2
                                 save_to_database(st.session_state.main_db)
-                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                                pass  # st.rerun() removed to prevent infinite loop
                 
                 if path2_ready:
                     st.markdown("#### 📊 Path 2 Sonuçları")
@@ -7230,11 +7221,11 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                         if col_btn1.button("✨ Akıcılaştır", key=f"akici_tr_{alt_key}"):
                             with st.spinner("Düzenleniyor..."):
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], "Daha akıcı ve doğal hale getir")
-                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                                pass  # st.rerun() removed to prevent infinite loop
                         if col_btn2.button("🔬 Akademikleştir", key=f"akad_tr_{alt_key}"):
                             with st.spinner("Düzenleniyor..."):
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], "Daha bilimsel ve üst düzey akademik bir dil kullan")
-                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                                pass  # st.rerun() removed to prevent infinite loop
                         
                         tweak_opt = st.selectbox("Mod Değiştir...", ["Seçiniz...", "Otoriter & Ağır Yap", "Yalınlaştır", "Kısa & Öz Yap", "Sunum Dili"], key=f"sel_tr_{alt_key}")
                         if tweak_opt != "Seçiniz...":
@@ -7246,7 +7237,7 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                                     "Sunum Dili": "Bu metni sanki uluslararası bir kongrede sahnede sunum yapıyormuş gibi, ilham verici tonda yeniden yaz."
                                 }
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], instructions[tweak_opt])
-                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                                pass  # st.rerun() removed to prevent infinite loop
 
                     # İNGİLİZCE SEKME
                     with tab_en:
@@ -7256,11 +7247,11 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                         if col_btn1_en.button("✨ Fluent", key=f"akici_en_{alt_key}"):
                             with st.spinner("Editing..."):
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], "Make it more fluent and natural")
-                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                                pass  # st.rerun() removed to prevent infinite loop
                         if col_btn2_en.button("🔬 Academic", key=f"akad_en_{alt_key}"):
                             with st.spinner("Editing..."):
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], "Use more scientific and high-level academic language")
-                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                                pass  # st.rerun() removed to prevent infinite loop
                                 
                         tweak_opt_en = st.selectbox("Change Mode...", ["Select...", "Authoritative & Heavy", "Simplify", "Short & Concise", "Presentation Tone"], key=f"sel_en_{alt_key}")
                         if tweak_opt_en != "Select...":
@@ -7272,7 +7263,7 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                                     "Presentation Tone": "Rewrite this text in an inspiring, captivating tone as if giving a presentation on stage at an international conference."
                                 }
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], instructions_en[tweak_opt_en])
-                                pass  # st.rerun() kaldırıldı (sonsuz döngü riski)
+                                pass  # st.rerun() removed to prevent infinite loop
         else:
             st.info("👈 Lütfen sol tarafa metninizi yapıştırın ve üret butonuna basın.")
                             # ==========================================
@@ -7546,7 +7537,7 @@ def get_elements_data():
 # 2. BAŞLANGIÇ VE ANA SEÇİM KONTROLÜ
 # ==========================================
 # Element listesini bir kez çağırıp hafızaya alıyoruz
-# MOVED INSIDE ELIF: tam_element_listesi = list(get_elements_data().keys())
+tam_element_listesi = list(get_elements_data().keys())
 
 # NOT: Eğer kendi menün varsa secim değişkenini oradan almalısın. 
 # Ama elif mantığının çalışması için mutlaka bir "if" başlatmalıyız.
@@ -8512,10 +8503,10 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
 # MODÜL: CASTEP LST/QST KİNETİK ANALİZ
 # ==========================================
 elif secim == "🔋 CASTEP Kinetik Analiz":
-    # (redundant) import pandas as pd
-    # (redundant) import numpy as np
-    # (redundant) import matplotlib.pyplot as plt
-    # (redundant) import matplotlib as mpl
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
     from matplotlib.ticker import MultipleLocator
     from scipy.interpolate import PchipInterpolator
     import re
@@ -8784,6 +8775,7 @@ elif secim == "📈 Convex Hull Analizi":
                     st.pyplot(plot_fig)
                     
                     # Açık kalan plot objesini temizle (bellek sızıntısını önlemek için)
+                    plt.close(plot_fig)
 
                 except Exception as e:
                     st.error(f"Analiz sırasında bir hata oluştu: {e}. API anahtarınızın doğru (Legacy API) olduğundan emin olun.")
@@ -8847,7 +8839,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
     # Fiziksel Özellikler Özet Tablosu
     if len(summary_table_data) > 0:
         st.markdown("### 📊 Fiziksel Analiz Tablosu")
-        # (redundant) import pandas as pd
+        import pandas as pd
         df_summary = pd.DataFrame(summary_table_data)
         st.table(df_summary)
 
@@ -8855,7 +8847,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
 
     # --- 2. VERİ OKUMA ---
     if st.button("🚀 Verileri Oku ve Grafiği Hazırla", type="primary", use_container_width=True):
-        # (redundant) import numpy as np
+        import numpy as np
         valid_datasets = []
         
         for data in thermo_data_inputs:
@@ -8936,7 +8928,7 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
                 e_step = st.number_input("E Adım", value=100.0, step=25.0)
 
         # 🎨 ÇİZİM BÖLÜMÜ
-        # (redundant) import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
         from matplotlib.ticker import MultipleLocator, AutoMinorLocator
         import io
 
