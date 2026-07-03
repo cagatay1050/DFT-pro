@@ -784,7 +784,6 @@ elif secim == "🔥 Termodinamik (VDOS)":
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight')
-        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla Grafiği İndir (PNG)",
             data=buf.getvalue(),
@@ -922,7 +921,6 @@ elif secim == "⚡ Difüzyon (Arrhenius)":
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight')
-        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla Grafiği İndir (PNG)",
             data=buf.getvalue(),
@@ -1093,7 +1091,6 @@ elif secim == "📈 Kinetik (MSD & Difüzyon)":
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight')
-        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla Paneli İndir (PNG)",
             data=buf.getvalue(),
@@ -1290,7 +1287,6 @@ elif secim == "⚛️ Yapısal Analiz (RDF)":
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
-        plt.close(fig)
         st.download_button(
             label=f"📥 {n_valid} Panelli RDF Grafiğini İndir (PNG)",
             data=buf.getvalue(),
@@ -1520,7 +1516,6 @@ elif secim == "🎵 Titreşim Spektrumu (VDoS)":
 
         # Ekrana Basma
         st.pyplot(fig)
-        plt.close(fig)
         
         # 💾 İNDİRME BÖLÜMÜ (DPI SEÇİMİ EKLENDİ)
         st.markdown("### 📥 Grafiği İndir")
@@ -1789,7 +1784,6 @@ elif secim == "📉 Parçalanma Termodinamiği (T_des)":
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight')
-        plt.close(fig)
         
         clean_name = mat_baslik.replace('\\', '').replace('{', '').replace('}', '').replace('mathbf', '').replace('_', '')
         dl_name = "Single_Pathway" if len(results) == 1 else "All_Pathways"
@@ -1983,7 +1977,6 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)":
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
-        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla AIMD Grafiğini İndir (PNG)",
             data=buf.getvalue(),
@@ -2259,7 +2252,6 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
             # İndirme Butonu
             buf = io.BytesIO()
             fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
-            plt.close(fig)
             st.download_button(
                 label="📥 Son Ayarlarla Bant Grafiğini İndir (PNG - 600 DPI)",
                 data=buf.getvalue(),
@@ -2582,7 +2574,6 @@ elif secim == "⛰️ NEB Enerji Bariyeri (Energy Profile)":
         
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
-        plt.close(fig)
         st.download_button(
             label="📥 Son Ayarlarla NEB Grafiğini İndir (PNG)",
             data=buf.getvalue(),
@@ -5588,7 +5579,6 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight', dpi=300)
-        plt.close(fig)
         st.download_button(
             label="📥 A-Sınıfı Yayın Grafiğini İndir (PNG, 300 DPI)",
             data=buf.getvalue(),
@@ -5844,7 +5834,6 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
         # İndirme Butonu (Seçilen DPI değerine göre)
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=p_dpi, bbox_inches='tight')
-        plt.close(fig)
         
         st.download_button(
             label=f"📥 AIMD Grafiğini İndir (PNG, {p_dpi} DPI)",
@@ -6049,7 +6038,6 @@ elif secim == "🎶 Fonon Band Yapısı":
                 # --- 6. İNDİRME BUTONU ---
                 buf = io.BytesIO()
                 fig.savefig(buf, format="png", dpi=p_dpi, bbox_inches='tight')
-                plt.close(fig)
                 
                 st.download_button(
                     label=f"📥 Fonon Band Grafiğini İndir (PNG, {p_dpi} DPI)",
@@ -6269,7 +6257,6 @@ elif secim == "🎵 Titreşim Spektrumu(VDoS) Grafikli":
         # İndirme Butonu
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
-        plt.close(fig)
         
         clean_name = malzeme_adi.replace('\\', '').replace('{', '').replace('}', '').replace('mathbf', '').replace('_', '')
         st.download_button(
@@ -6463,7 +6450,6 @@ elif secim == "📍 Çoklu Sıcaklık RDF (Overlay)":
         
         plt.tight_layout()
         st.pyplot(fig)
-        plt.close(fig)
         
         # 📥 İNDİRME MOTORU
         st.markdown("### 📥 Makale İçin İndir")
@@ -6629,7 +6615,6 @@ elif secim == "📍 Çoklu Sıcaklık VDoS (Overlay)":
         
         # Önce ekrana bas
         st.pyplot(fig)
-        plt.close(fig)
 
         # 📥 İNDİRME MOTORU
         st.markdown("### 📥 Makale İçin İndir")
@@ -6643,7 +6628,6 @@ elif secim == "📍 Çoklu Sıcaklık VDoS (Overlay)":
             st.download_button("Grafiği İndir (PNG)", data=buf.getvalue(), file_name=f"Overlay_VDOS.png", mime="image/png")
             
         # Ghosting'i (Hayalet Veriyi) kesin olarak önler
-        plt.close(fig)
     # ==========================================
 # MODÜL: MASTER GRAFİK BİRLEŞTİRİCİ (ORIGIN KLONU)
 # ==========================================
@@ -6848,7 +6832,6 @@ elif secim == "🎨 Master Grafik Birleştirici (Origin Klonu)":
                     buf_svg = io.BytesIO()
                     fig.savefig(buf_svg, format="svg", bbox_inches='tight')
                     st.download_button(label="SVG Olarak İndir (Vektörel)", data=buf_svg.getvalue(), file_name="Master_Plot.svg", mime="image/svg+xml", use_container_width=True)    
-                plt.close(fig)
 # ==========================================
 # MODÜL: formasyon enerji
 # ==========================================    
@@ -7490,7 +7473,6 @@ elif secim == "📈 Murnaghan EOS Fit (CASTEP)":
                     # --- İNDİRME MOTORU ---
                     buf = io.BytesIO()
                     fig.savefig(buf, format="png", bbox_inches='tight', dpi=dpi_val)
-                    plt.close(fig)
                     st.download_button(
                         label=f"📥 Murnaghan Grafiğini İndir (PNG, {dpi_val} DPI)",
                         data=buf.getvalue(),
@@ -7931,7 +7913,6 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
                     buf_svg = io.BytesIO()
                     fig.savefig(buf_svg, format="svg", bbox_inches='tight')
                     st.download_button("SVG İndir (Vektörel)", buf_svg.getvalue(), "Band_Structure.svg", "image/svg+xml", use_container_width=True)
-                plt.close(fig)
         else:
             st.info("Lütfen '1. Veri ve Fermi Seviyesi' sekmesinden bant verinizi yükleyin.")
  # ==========================================
@@ -8097,7 +8078,6 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             ax.axis('off')
             
             st.pyplot(fig)
-            plt.close(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
 ####################Dergi Bulucu###############################
 #
@@ -8524,7 +8504,6 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
         # İndirme İşlemi
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches='tight', dpi=600)
-        plt.close(fig)
         st.download_button(label="📥 DOS Grafiğini İndir (600 DPI)", 
                           data=buf.getvalue(), 
                           file_name="DOS_PDOS_Origin.png", 
@@ -8725,7 +8704,6 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         # 2. Arka Planda Gerçek 600 DPI Bellek Tamponu Oluştur (YENİ)
         fn_buf = io.BytesIO()
         fig.savefig(fn_buf, format="png", dpi=dpi_val, bbox_inches='tight')
-        plt.close(fig)
         fn_buf.seek(0)
         
         # 3. İndirme Butonunu Ekrana Bas (YENİ)
@@ -8804,10 +8782,8 @@ elif secim == "📈 Convex Hull Analizi":
                     
                     # Matplotlib figürünü Streamlit'e aktar
                     st.pyplot(plot_fig)
-                    plt.close(plot_fig)
                     
                     # Açık kalan plot objesini temizle (bellek sızıntısını önlemek için)
-                    plt.close(plot_fig)
 
                 except Exception as e:
                     st.error(f"Analiz sırasında bir hata oluştu: {e}. API anahtarınızın doğru (Legacy API) olduğundan emin olun.")
@@ -9050,4 +9026,3 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
                 mime="image/png",
                 use_container_width=True
             )
-        plt.close(fig)
