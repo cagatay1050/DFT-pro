@@ -1,5 +1,7 @@
 import streamlit as st
-from modules.plot_settings import get_unified_plot_settings, apply_plot_settings
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules'))
+from plot_settings import get_unified_plot_settings, apply_plot_settings
 
 st.set_page_config(page_title="Cagatay Yamcicier Moduller", layout="wide", page_icon="⚛️")
 # 1. STANDART PYTHON KÜTÜPHANELERİ
