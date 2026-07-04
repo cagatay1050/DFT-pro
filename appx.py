@@ -1,4 +1,9 @@
 import streamlit as st
+import sys
+if r"C:\Users\cagatay\Desktop\DFT-pro\modules" not in sys.path:
+    sys.path.append(r"C:\Users\cagatay\Desktop\DFT-pro\modules")
+from plot_settings import get_unified_plot_settings, apply_plot_settings
+
 st.set_page_config(page_title="Cagatay Yamcicier Moduller", layout="wide", page_icon="⚛️")
 # 1. STANDART PYTHON KÜTÜPHANELERİ
 # ==========================================
@@ -246,6 +251,10 @@ st.sidebar.markdown("---")
 # Kullanıcı önce "Ana Kategoriyi" seçer (Dropdown kutusu)
 secili_kategori = st.sidebar.selectbox("📂 Ana Kategori Seçin:", list(menuler.keys()))
 
+st.sidebar.markdown("---")
+
+# Ortak Grafik Ayarları Paneli
+global_plot_settings = get_unified_plot_settings("global_")
 st.sidebar.markdown("---")
 
 # Kod sadece seçilen kategoriye ait modülleri gösterir (Radio butonu)
@@ -759,7 +768,18 @@ elif secim == "🔥 Termodinamik (VDOS)":
         plt.title(f'Thermodynamic Properties of ${material_name}$', fontweight='bold', pad=15)
         
         # Grafiği Ekrana Bas
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -896,7 +916,18 @@ elif secim == "⚡ Difüzyon (Arrhenius)":
         plt.tight_layout()
 
         # Grafiği Ekrana Bas
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1066,7 +1097,18 @@ elif secim == "📈 Kinetik (MSD & Difüzyon)":
         col_m1.metric("Simülasyon Süresi (Son Adım)", f"{time_diff.iloc[-1]:.0f} fs")
         col_m2.metric("Nihai Toplam Difüzyon Katsayısı (D)", f"{final_D:.4e} cm²/s")
         
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1262,7 +1304,18 @@ elif secim == "⚛️ Yapısal Analiz (RDF)":
         plt.tight_layout(pad=2.0, w_pad=3.0, h_pad=3.0)
 
         # --- EKRANA BASMA ---
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1495,7 +1548,18 @@ elif secim == "🎵 Titreşim Spektrumu (VDoS)":
         plt.tight_layout()
 
         # Ekrana Basma
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # 💾 İNDİRME BÖLÜMÜ (DPI SEÇİMİ EKLENDİ)
         st.markdown("### 📥 Grafiği İndir")
@@ -1759,7 +1823,18 @@ elif secim == "📉 Parçalanma Termodinamiği (T_des)":
         plt.tight_layout()
 
         # Ekrana Basma
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1982,7 +2057,18 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)":
         plt.tight_layout(pad=3.0)
 
         # Ekrana Basma
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -2257,7 +2343,18 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
             plt.tight_layout()
 
             # Ekrana Basma
-            st.pyplot(fig)
+            if 'global_plot_settings' in globals():
+                try:
+                    apply_plot_settings(fig, global_plot_settings)
+                    if "dpi" in global_plot_settings:
+                        st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                    else:
+                        st.pyplot(fig)
+                except Exception as e:
+                    st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                    st.pyplot(fig)
+            else:
+                st.pyplot(fig)
             
             # İndirme Butonu
             buf = io.BytesIO()
@@ -2580,7 +2677,18 @@ elif secim == "⛰️ NEB Enerji Bariyeri (Energy Profile)":
         col_m2.metric("Ters Bariyer", f"{metrics['Ea_b']:.4f} eV")
         col_m3.metric("Reaksiyon Enerjisi (ΔE)", f"{metrics['Delta_E']:.4f} eV")
 
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
@@ -5594,7 +5702,18 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                 spine.set_linewidth(2.0)
 
         plt.tight_layout(pad=3.0, w_pad=4.0)
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -5853,7 +5972,18 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
         fig.subplots_adjust(wspace=p_wspace)
 
         # Ekrana Basma
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu (Seçilen DPI değerine göre)
         buf = io.BytesIO()
@@ -6057,7 +6187,18 @@ elif secim == "🎶 Fonon Band Yapısı":
                     ax.legend([formatted_text], loc=text_position, fontsize=12, handlelength=0, handletextpad=0, fancybox=False, edgecolor='black').get_frame().set_linewidth(1.0)
 
                 plt.tight_layout()
-                st.pyplot(fig)
+                if 'global_plot_settings' in globals():
+                    try:
+                        apply_plot_settings(fig, global_plot_settings)
+                        if "dpi" in global_plot_settings:
+                            st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                        else:
+                            st.pyplot(fig)
+                    except Exception as e:
+                        st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                        st.pyplot(fig)
+                else:
+                    st.pyplot(fig)
 
                 # --- 6. İNDİRME BUTONU ---
                 buf = io.BytesIO()
@@ -6276,7 +6417,18 @@ elif secim == "🎵 Titreşim Spektrumu(VDoS) Grafikli":
         plt.tight_layout()
 
         # Ekrana Basma
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -6473,7 +6625,18 @@ elif secim == "📍 Çoklu Sıcaklık RDF (Overlay)":
             tick.set_fontweight('bold')
         
         plt.tight_layout()
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # 📥 İNDİRME MOTORU
         st.markdown("### 📥 Makale İçin İndir")
@@ -6638,7 +6801,18 @@ elif secim == "📍 Çoklu Sıcaklık VDoS (Overlay)":
         plt.tight_layout()
         
         # Önce ekrana bas
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
 
         # 📥 İNDİRME MOTORU
         st.markdown("### 📥 Makale İçin İndir")
@@ -6840,7 +7014,18 @@ elif secim == "🎨 Master Grafik Birleştirici (Origin Klonu)":
                 plt.tight_layout()
 
                 # Grafiği Ekranda Göster
-                st.pyplot(fig)
+                if 'global_plot_settings' in globals():
+                    try:
+                        apply_plot_settings(fig, global_plot_settings)
+                        if "dpi" in global_plot_settings:
+                            st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                        else:
+                            st.pyplot(fig)
+                    except Exception as e:
+                        st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                        st.pyplot(fig)
+                else:
+                    st.pyplot(fig)
 
                 # Çıktı Alma Bölümü
                 st.markdown("### 📥 Yüksek Çözünürlüklü Dışa Aktar")
@@ -7493,7 +7678,18 @@ elif secim == "📈 Murnaghan EOS Fit (CASTEP)":
                     ax.legend(loc=leg_pos, frameon=False, fontsize=f_tick, prop={'weight':'bold'})
                     
                     plt.tight_layout()
-                    st.pyplot(fig)
+                    if 'global_plot_settings' in globals():
+                        try:
+                            apply_plot_settings(fig, global_plot_settings)
+                            if "dpi" in global_plot_settings:
+                                st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                            else:
+                                st.pyplot(fig)
+                        except Exception as e:
+                            st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                            st.pyplot(fig)
+                    else:
+                        st.pyplot(fig)
 
                     # --- İNDİRME MOTORU ---
                     buf = io.BytesIO()
@@ -7925,7 +8121,18 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
                     ax.legend(loc='upper right', frameon=True, prop={'weight':'bold', 'size':f_label_size-2}).get_frame().set_linewidth(1.5)
 
                 plt.tight_layout()
-                st.pyplot(fig)
+                if 'global_plot_settings' in globals():
+                    try:
+                        apply_plot_settings(fig, global_plot_settings)
+                        if "dpi" in global_plot_settings:
+                            st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                        else:
+                            st.pyplot(fig)
+                    except Exception as e:
+                        st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                        st.pyplot(fig)
+                else:
+                    st.pyplot(fig)
 
                 # 4. İNDİRME BÖLÜMÜ
                 st.markdown("### 📥 Makale Formatında İndir")
@@ -8102,7 +8309,18 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             ax.set_ylim(-0.15, 0.15)
             ax.axis('off')
             
-            st.pyplot(fig)
+            if 'global_plot_settings' in globals():
+                try:
+                    apply_plot_settings(fig, global_plot_settings)
+                    if "dpi" in global_plot_settings:
+                        st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                    else:
+                        st.pyplot(fig)
+                except Exception as e:
+                    st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                    st.pyplot(fig)
+            else:
+                st.pyplot(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
 ####################Dergi Bulucu###############################
 #
@@ -8524,7 +8742,18 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
                     transform=ax.transAxes, fontsize=p_font_label, fontweight='bold', va='top')
 
         plt.tight_layout()
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme İşlemi
         buf = io.BytesIO()
@@ -8724,7 +8953,18 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         ax.legend(loc="upper right", frameon=False, fontsize=font_size-2)
         
         # 1. Grafiği Streamlit Ekranına Standart Çiz
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
 
         # 2. Arka Planda Gerçek 600 DPI Bellek Tamponu Oluştur (YENİ)
         fn_buf = io.BytesIO()
@@ -8806,7 +9046,18 @@ elif secim == "📈 Convex Hull Analizi":
                     plot_fig = plotter.get_plot() 
                     
                     # Matplotlib figürünü Streamlit'e aktar
-                    st.pyplot(plot_fig)
+                    if 'global_plot_settings' in globals():
+                        try:
+                            apply_plot_settings(plot_fig, global_plot_settings)
+                            if "dpi" in global_plot_settings:
+                                st.pyplot(plot_fig, dpi=global_plot_settings["dpi"])
+                            else:
+                                st.pyplot(plot_fig)
+                        except Exception as e:
+                            st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                            st.pyplot(plot_fig)
+                    else:
+                        st.pyplot(plot_fig)
                     
                     # Açık kalan plot objesini temizle (bellek sızıntısını önlemek için)
                     plt.close(plot_fig)
@@ -9035,7 +9286,18 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
         # Lejant sadece (a) paneline (F) eklenir
         ax_F.legend(loc='best', frameon=False, prop={'weight':'bold', 'size':f_leg})
 
-        st.pyplot(fig)
+        if 'global_plot_settings' in globals():
+            try:
+                apply_plot_settings(fig, global_plot_settings)
+                if "dpi" in global_plot_settings:
+                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
+                else:
+                    st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Grafik ayarları uygulanırken hata: {e}")
+                st.pyplot(fig)
+        else:
+            st.pyplot(fig)
         
         # İndirme Butonu
         c_dpi1, c_dpi2 = st.columns([1, 3])
