@@ -1,11 +1,5 @@
 import streamlit as st
-import sys
-import os
-current_dir = os.path.dirname(os.path.abspath(__file__))
-modules_path = os.path.join(current_dir, "modules")
-if modules_path not in sys.path:
-    sys.path.append(modules_path)
-from plot_settings import get_unified_plot_settings, apply_plot_settings
+from modules.plot_settings import get_unified_plot_settings, apply_plot_settings
 
 st.set_page_config(page_title="Cagatay Yamcicier Moduller", layout="wide", page_icon="⚛️")
 # 1. STANDART PYTHON KÜTÜPHANELERİ
