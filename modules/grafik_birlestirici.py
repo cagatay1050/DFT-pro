@@ -179,4 +179,10 @@ class GrafikBirlestiriciWidget(QWidget):
         ax.legend(loc=self.cb_legend_loc.currentText(), frameon=True)
         
         self.figure.tight_layout()
+        try:
+            from utils.style_manager import apply_custom_axes_settings
+            if hasattr(self, 'figure'):
+                apply_custom_axes_settings(self.figure)
+        except Exception as e:
+            print(f'Error applying custom axes settings: {e}')
         self.canvas.draw()

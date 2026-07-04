@@ -15,7 +15,12 @@ current_settings = {
     "font_label": 15, "font_tick": 13, "axes_width": 2.0, "line_width": 2.5,
     "cmap": "tab10", "tick_dir": "in", "maj_tick_len": 6.0, "maj_tick_wid": 2.0,
     "minor_ticks": True, "min_tick_len": 3.0, "min_tick_wid": 1.2,
-    "top_right_ticks": True, "grid": False, "legend_frame": False
+    "top_right_ticks": True, "grid": False, "legend_frame": False,
+    "dark_mode": False, 
+    "use_custom_x": False, "x_min": 0.0, "x_max": 10.0, "x_step": 1.0,
+    "use_custom_y": False, "y_min": -5.0, "y_max": 5.0, "y_step": 1.0,
+    "show_legend": True, "leg_x": 1.0, "leg_y": 1.0, "leg_size": 14,
+    "custom_text": "", "txt_x": 0.5, "txt_y": 0.9, "txt_size": 16
 }
 
 def apply_global_style():
@@ -65,3 +70,66 @@ def apply_global_style():
         "legend.edgecolor": "black",
         "legend.fancybox": False
     })
+
+
+def apply_custom_axes_settings(fig):
+    s = current_settings
+    bg_color = "#1E1E1E" if s.get("dark_mode", False) else "#FFFFFF"
+    fg_color = "#FFFFFF" if s.get("dark_mode", False) else "#000000"
+    spine_color = "#FFFFFF" if s.get("dark_mode", False) else "#000000"
+    
+    fig.patch.set_facecolor(bg_color)
+    
+    from matplotlib.ticker import MultipleLocator
+    
+    for ax in fig.axes:
+        ax.set_facecolor(bg_color)
+        
+        for spine in ax.spines.values():
+            spine.set_color(spine_color)
+            
+        ax.tick_params(colors=fg_color, which='both')
+        
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_color(fg_color)
+            
+        ax.xaxis.label.set_color(fg_color)
+        ax.yaxis.label.set_color(fg_color)
+        
+        if ax.get_title():
+            ax.title.set_color(fg_color)
+            
+        if s.get("use_custom_x", False):
+            ax.set_xlim(s["x_min"], s["x_max"])
+            ax.xaxis.set_major_locator(MultipleLocator(s["x_step"]))
+            
+        if s.get("use_custom_y", False):
+            ax.set_ylim(s["y_min"], s["y_max"])
+            ax.yaxis.set_major_locator(MultipleLocator(s["y_step"]))
+            
+        if s.get("custom_text", "").strip() != "":
+            ax.text(s["txt_x"], s["txt_y"], s["custom_text"],
+                    transform=ax.transAxes, fontsize=s["txt_size"],
+                    color=fg_color, va='center', ha='center')
+                    
+        # Find legend and update it if it exists
+        leg = ax.get_legend()
+        if leg:
+            if not s.get("show_legend", True):
+                leg.set_visible(False)
+            else:
+                leg.set_visible(True)
+                leg.set_bbox_to_anchor((s.get("leg_x", 1.0), s.get("leg_y", 1.0)))
+                
+                for text in leg.get_texts():
+                    text.set_color(fg_color)
+                    text.set_fontsize(s.get("leg_size", 14))
+                
+                frame = leg.get_frame()
+                if s.get("legend_frame", False):
+                    frame.set_linewidth(1)
+                    frame.set_edgecolor(spine_color)
+                    frame.set_facecolor(bg_color)
+                else:
+                    frame.set_linewidth(0)
+                    frame.set_facecolor('none')

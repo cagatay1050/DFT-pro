@@ -38,6 +38,9 @@ from modules.stokiyometri_katkilama import StokiyometriKatkilamaWidget
 from modules.spin_polarize_bant import SpinPolarizeBantWidget
 from modules.harici_araclar import HariciAraclarWidget
 from modules.mekanik_ozellikler import MekanikOzelliklerWidget
+from modules.kristal_goruntuleyici import KristalGoruntuleyiciWidget
+from modules.gorsel_lejant import GorselLejantWidget
+from modules.gorsel_iyilestirici import GorselIyilestiriciWidget
 
 # New 8 INCAR Generator modules
 from modules.elastik_sabitler import ElastikSabitlerWidget
@@ -198,6 +201,9 @@ class MainWindow(QMainWindow):
         self.widgets.append(Hse06OptikWidget())                     # 35
         self.widgets.append(HariciAraclarWidget())                  # 36
         self.widgets.append(MekanikOzelliklerWidget())              # 37
+        self.widgets.append(KristalGoruntuleyiciWidget())           # 38
+        self.widgets.append(GorselLejantWidget())                   # 39
+        self.widgets.append(GorselIyilestiriciWidget())             # 40
         
         for w in self.widgets:
             self.stacked_widget.addWidget(w)
@@ -249,6 +255,7 @@ class MainWindow(QMainWindow):
         self.add_menu_action(menu_struct, "Stokiyometri ve Katkılama Analizi", 26)
         self.add_menu_action(menu_struct, "Hidrür Aday Jeneratörü", 13)
         self.add_menu_action(menu_struct, "⚙️ Mekanik Özellikler (VELAS Klonu)", 37)
+        self.add_menu_action(menu_struct, "💎 VESTA Kristal Görüntüleyici (3D)", 38)
         
         # 6. İş Akışları ve Araçlar (⚙️/🎨)
         menu_tools = self.menu_bar.addMenu("⚙️ İş Akışları & Araçlar")
@@ -257,6 +264,8 @@ class MainWindow(QMainWindow):
         self.add_menu_action(menu_tools, "Master Grafik Birleştirici (Origin Klonu)", 22)
         self.add_menu_action(menu_tools, "Makale Paneli (Görsel Birleştirici)", 12)
         self.add_menu_action(menu_tools, "🧰 Harici Araçlar (.exe Başlatıcı)", 36)
+        self.add_menu_action(menu_tools, "🖼️ Görselden Otomatik Lejant Üretici (Yapay Görme)", 39)
+        self.add_menu_action(menu_tools, "✨ Görsel Kalite Artırıcı (Çözünürlük Yükseltme)", 40)
 
     def add_menu_action(self, menu, name, index):
         action = QAction(name, self)

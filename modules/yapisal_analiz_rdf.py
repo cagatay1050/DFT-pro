@@ -275,4 +275,10 @@ class YapisalAnalizRDFWidget(QWidget):
             leg.set_draggable(True)
             
         self.figure.tight_layout(pad=2.0)
+        try:
+            from utils.style_manager import apply_custom_axes_settings
+            if hasattr(self, 'figure'):
+                apply_custom_axes_settings(self.figure)
+        except Exception as e:
+            print(f'Error applying custom axes settings: {e}')
         self.canvas.draw()

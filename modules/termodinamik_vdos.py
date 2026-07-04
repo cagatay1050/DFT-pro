@@ -255,4 +255,10 @@ class TermodinamikVDOSWidget(QWidget):
         self.figure.suptitle(f'Thermodynamic Properties of ${self.material_name}$', fontweight='bold', y=0.98)
         
         self.figure.tight_layout()
+        try:
+            from utils.style_manager import apply_custom_axes_settings
+            if hasattr(self, 'figure'):
+                apply_custom_axes_settings(self.figure)
+        except Exception as e:
+            print(f'Error applying custom axes settings: {e}')
         self.canvas.draw()

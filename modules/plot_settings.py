@@ -110,64 +110,114 @@ def get_unified_plot_settings(prefix="common_"):
 def apply_plot_settings(fig, settings):
     """
     Bir matplotlib ekseni (ax) üzerine, yukarıdaki arayüzden gelen ayarları uygular.
+    Tüm işlemler try-except bloklarına alınarak çökmeler (crash) engellenmiştir.
     """
     import matplotlib.pyplot as plt
     from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 
-    bg_color = "#1E1E1E" if settings["dark_mode"] else "#FFFFFF"
-    fg_color = settings["font_color"]
-    spine_color = settings["spine_color"]
+    try:
+        # Boyut Ayarı
+        try:
+            fig.set_size_inches(settings.get("fig_width", 14.0), settings.get("fig_height", 8.0))
+        except: pass
 
-    
-    fig.patch.set_facecolor(bg_color)
-    for ax in fig.axes:
-        ax.set_facecolor(bg_color)
-
-        for spine in ax.spines.values():
-            spine.set_linewidth(settings["spine_width"])
-            spine.set_color(spine_color)
+        bg_color = "#1E1E1E" if settings.get("dark_mode", False) else "#FFFFFF"
+        fg_color = settings.get("font_color", "#000000")
+        spine_color = settings.get("spine_color", "#000000")
         
-        if settings["show_minor_ticks"]:
-            ax.xaxis.set_minor_locator(AutoMinorLocator())
-            ax.yaxis.set_minor_locator(AutoMinorLocator())
-            ax.tick_params(axis='both', which='minor', length=settings["minor_tick_len"], width=settings["tick_width"]/1.5, colors=fg_color, direction='in', top=True, right=True)
-        else:
-            ax.tick_params(axis='both', which='minor', bottom=False, left=False, top=False, right=False)
+        try:
+            fig.patch.set_facecolor(bg_color)
+        except: pass
 
-        ax.tick_params(axis='both', which='major', length=settings["major_tick_len"], width=settings["tick_width"], colors=fg_color, labelsize=settings["tick_label_size"], direction='in', top=True, right=True)
+        for ax in fig.axes:
+            try:
+                ax.set_facecolor(bg_color)
+            except: pass
 
-        for label in ax.get_xticklabels() + ax.get_yticklabels():
-            label.set_fontweight(settings["font_weight"])
-            label.set_fontfamily(settings["font_family"])
-            label.set_color(fg_color)
+            try:
+                for spine in ax.spines.values():
+                    spine.set_linewidth(settings.get("spine_width", 2.5))
+                    spine.set_color(spine_color)
+            except: pass
             
-        ax.xaxis.label.set_color(fg_color)
-        ax.yaxis.label.set_color(fg_color)
-        ax.xaxis.label.set_fontsize(settings["label_size"])
-        ax.yaxis.label.set_fontsize(settings["label_size"])
-        ax.xaxis.label.set_fontweight(settings["font_weight"])
-        ax.yaxis.label.set_fontweight(settings["font_weight"])
-        ax.xaxis.label.set_fontfamily(settings["font_family"])
-        ax.yaxis.label.set_fontfamily(settings["font_family"])
-        
-        ax.xaxis.labelpad = settings["label_pad"]
-        ax.yaxis.labelpad = settings["label_pad"]
-        
-        if ax.get_title():
-            ax.title.set_color(fg_color)
-            ax.title.set_fontsize(settings["title_size"])
-            ax.title.set_fontweight(settings["font_weight"])
-            ax.title.set_fontfamily(settings["font_family"])
+            try:
+                if settings.get("show_minor_ticks", True):
+                    ax.xaxis.set_minor_locator(AutoMinorLocator())
+                    ax.yaxis.set_minor_locator(AutoMinorLocator())
+                    ax.tick_params(axis='both', which='minor', length=settings.get("minor_tick_len", 6.0), width=settings.get("tick_width", 2.5)/1.5, colors=fg_color, direction='in', top=True, right=True)
+                else:
+                    ax.tick_params(axis='both', which='minor', bottom=False, left=False, top=False, right=False)
+            except: pass
 
-        if settings["use_custom_x"]:
-            ax.set_xlim(settings["x_min"], settings["x_max"])
-            ax.xaxis.set_major_locator(MultipleLocator(settings["x_step"]))
-        if settings["use_custom_y"]:
-            ax.set_ylim(settings["y_min"], settings["y_max"])
-            ax.yaxis.set_major_locator(MultipleLocator(settings["y_step"]))
+            try:
+                ax.tick_params(axis='both', which='major', length=settings.get("major_tick_len", 12.0), width=settings.get("tick_width", 2.5), colors=fg_color, labelsize=settings.get("tick_label_size", 20), direction='in', top=True, right=True)
+            except: pass
+
+            try:
+                for label in ax.get_xticklabels() + ax.get_yticklabels():
+                    label.set_fontweight(settings.get("font_weight", "bold"))
+                    label.set_fontfamily(settings.get("font_family", "Arial"))
+                    label.set_color(fg_color)
+            except: pass
+                
+            try:
+                ax.xaxis.label.set_color(fg_color)
+                ax.yaxis.label.set_color(fg_color)
+                ax.xaxis.label.set_fontsize(settings.get("label_size", 24))
+                ax.yaxis.label.set_fontsize(settings.get("label_size", 24))
+                ax.xaxis.label.set_fontweight(settings.get("font_weight", "bold"))
+                ax.yaxis.label.set_fontweight(settings.get("font_weight", "bold"))
+                ax.xaxis.label.set_fontfamily(settings.get("font_family", "Arial"))
+                ax.yaxis.label.set_fontfamily(settings.get("font_family", "Arial"))
+                ax.xaxis.labelpad = settings.get("label_pad", 15)
+                ax.yaxis.labelpad = settings.get("label_pad", 15)
+            except: pass
             
-        if settings.get("custom_text", "").strip() != "":
-            ax.text(settings["txt_x"], settings["txt_y"], settings["custom_text"],
-                    transform=ax.transAxes, fontsize=settings["txt_size"],
-                    fontweight=settings["font_weight"], fontfamily=settings["font_family"],
-                    color=fg_color, va='center', ha='center')
+            try:
+                if ax.get_title():
+                    ax.title.set_color(fg_color)
+                    ax.title.set_fontsize(settings.get("title_size", 28))
+                    ax.title.set_fontweight(settings.get("font_weight", "bold"))
+                    ax.title.set_fontfamily(settings.get("font_family", "Arial"))
+            except: pass
+
+            try:
+                if settings.get("use_custom_x", False):
+                    ax.set_xlim(settings["x_min"], settings["x_max"])
+                    ax.xaxis.set_major_locator(MultipleLocator(settings["x_step"]))
+            except: pass
+            
+            try:
+                if settings.get("use_custom_y", False):
+                    ax.set_ylim(settings["y_min"], settings["y_max"])
+                    ax.yaxis.set_major_locator(MultipleLocator(settings["y_step"]))
+            except: pass
+                
+            try:
+                if settings.get("custom_text", "").strip() != "":
+                    ax.text(settings["txt_x"], settings["txt_y"], settings["custom_text"],
+                            transform=ax.transAxes, fontsize=settings["txt_size"],
+                            fontweight=settings["font_weight"], fontfamily=settings["font_family"],
+                            color=fg_color, va='center', ha='center')
+            except: pass
+            
+            # Note: show_legend logic is typically applied manually where the legend is created,
+            # because axes might have multiple legends or it requires handles.
+            # But we can try to update existing legend if it exists.
+            try:
+                leg = ax.get_legend()
+                if leg is not None:
+                    if not settings.get("show_legend", True):
+                        leg.set_visible(False)
+                    else:
+                        leg.set_visible(True)
+                        plt.setp(leg.get_texts(), fontsize=settings.get("leg_size", 20), color=fg_color)
+                        # Optionally leg.set_bbox_to_anchor((settings["leg_x"], settings["leg_y"])) 
+                        # can break layout so best left to the user creation script.
+            except: pass
+
+    except Exception as e:
+        # Prevent completely crashing Streamlit
+        import traceback
+        print(f"Grafik ayari uygulanirken hata: {e}")
+        pass

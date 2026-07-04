@@ -338,4 +338,10 @@ class AIMDFarkliFormatWidget(QWidget):
 
         self.figure.tight_layout(pad=3.0)
         self.figure.subplots_adjust(wspace=0.15)
+        try:
+            from utils.style_manager import apply_custom_axes_settings
+            if hasattr(self, 'figure'):
+                apply_custom_axes_settings(self.figure)
+        except Exception as e:
+            print(f'Error applying custom axes settings: {e}')
         self.canvas.draw()
