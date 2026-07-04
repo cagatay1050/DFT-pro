@@ -1,9 +1,4 @@
-import streamlit as st
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules'))
-from plot_settings import get_unified_plot_settings, apply_plot_settings
-
-st.set_page_config(page_title="Cagatay Yamcicier Moduller", layout="wide", page_icon="⚛️")
+# ==========================================
 # 1. STANDART PYTHON KÜTÜPHANELERİ
 # ==========================================
 import os
@@ -19,6 +14,7 @@ from itertools import combinations
 # ==========================================
 # 2. TEMEL VERİ BİLİMİ VE WEB ARAYÜZÜ
 # ==========================================
+import streamlit as st
 import numpy as np
 import pandas as pd
 import requests
@@ -168,6 +164,7 @@ with st.sidebar.expander("🎨 Kapsam Grafik Ayarları (OriginLab TarzıZ)", exp
     })
 
 # --- SAYFA AYARLARI ---
+st.set_page_config(page_title="Çağatay Yamçıçıer Modüller", layout="wide", page_icon="⚛️")
 
 # (Buradan itibaren senin menü ve elif blokların eskisi gibi devam edecek...)
 # --- YAN MENÜ (SIDEBAR) ---
@@ -250,10 +247,6 @@ st.sidebar.markdown("---")
 # Kullanıcı önce "Ana Kategoriyi" seçer (Dropdown kutusu)
 secili_kategori = st.sidebar.selectbox("📂 Ana Kategori Seçin:", list(menuler.keys()))
 
-st.sidebar.markdown("---")
-
-# Ortak Grafik Ayarları Paneli
-global_plot_settings = get_unified_plot_settings("global_")
 st.sidebar.markdown("---")
 
 # Kod sadece seçilen kategoriye ait modülleri gösterir (Radio butonu)
@@ -767,18 +760,8 @@ elif secim == "🔥 Termodinamik (VDOS)":
         plt.title(f'Thermodynamic Properties of ${material_name}$', fontweight='bold', pad=15)
         
         # Grafiği Ekrana Bas
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -915,18 +898,8 @@ elif secim == "⚡ Difüzyon (Arrhenius)":
         plt.tight_layout()
 
         # Grafiği Ekrana Bas
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1096,18 +1069,8 @@ elif secim == "📈 Kinetik (MSD & Difüzyon)":
         col_m1.metric("Simülasyon Süresi (Son Adım)", f"{time_diff.iloc[-1]:.0f} fs")
         col_m2.metric("Nihai Toplam Difüzyon Katsayısı (D)", f"{final_D:.4e} cm²/s")
         
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1303,18 +1266,8 @@ elif secim == "⚛️ Yapısal Analiz (RDF)":
         plt.tight_layout(pad=2.0, w_pad=3.0, h_pad=3.0)
 
         # --- EKRANA BASMA ---
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1547,18 +1500,8 @@ elif secim == "🎵 Titreşim Spektrumu (VDoS)":
         plt.tight_layout()
 
         # Ekrana Basma
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # 💾 İNDİRME BÖLÜMÜ (DPI SEÇİMİ EKLENDİ)
         st.markdown("### 📥 Grafiği İndir")
@@ -1822,18 +1765,8 @@ elif secim == "📉 Parçalanma Termodinamiği (T_des)":
         plt.tight_layout()
 
         # Ekrana Basma
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -1907,40 +1840,10 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)":
                     df = pd.read_csv(item["file"], sep=r'\s+')
                     
                     # Zaman birimi düzeltmesi
-                    if 'Time(fs)' not in df.columns:
-                        if 'Time(ps)' in df.columns:
-                            df['Time(fs)'] = df['Time(ps)'] * 1000
-                        elif 'Step' in df.columns:
-                            df['Time(fs)'] = df['Step']
-                        elif 'tep' in df.columns:
-                            df['Time(fs)'] = df['tep']
-                        elif 'step' in df.columns.str.lower():
-                            step_col = df.columns[df.columns.str.lower() == 'step'][0]
-                            df['Time(fs)'] = df[step_col]
-                        else:
-                            df['Time(fs)'] = df.index
-                    
-                    # Sıcaklık Sütunu Eşleştirmesi
-                    if 'Temperature(K)' not in df.columns:
-                        if 'Temperature_K' in df.columns:
-                            df['Temperature(K)'] = df['Temperature_K']
-                        elif 'T(K)' in df.columns:
-                            df['Temperature(K)'] = df['T(K)']
-                        elif len(df.columns) > 1:
-                            df['Temperature(K)'] = df.iloc[:, 1]
-                    
-                    # Enerji Sütunu Eşleştirmesi (E0_eV ve E_Total_eV Öncelikli)
-                    if 'Energy(eV)' not in df.columns:
-                        if 'E0_eV' in df.columns:
-                            df['Energy(eV)'] = df['E0_eV']
-                        elif 'E_Total_eV' in df.columns:
-                            df['Energy(eV)'] = df['E_Total_eV']
-                        elif 'E_Kinetic_eV' in df.columns:
-                            df['Energy(eV)'] = df['E_Kinetic_eV']
-                        elif len(df.columns) >= 5:
-                            df['Energy(eV)'] = df.iloc[:, 4]
-                        elif len(df.columns) > 0:
-                            df['Energy(eV)'] = df.iloc[:, -1] 
+                    if 'Time(ps)' in df.columns and 'Time(fs)' not in df.columns:
+                        df['Time(fs)'] = df['Time(ps)'] * 1000
+                    elif 'Time(fs)' not in df.columns:
+                        df['Time(fs)'] = df.index 
                         
                     # Otonom Sınırları Güncelle
                     if 'Time(fs)' in df.columns:
@@ -2056,18 +1959,8 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)":
         plt.tight_layout(pad=3.0)
 
         # Ekrana Basma
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -2342,18 +2235,8 @@ elif secim == "🌌 Elektronik Bant Yapısı (Band)":
             plt.tight_layout()
 
             # Ekrana Basma
-            if 'global_plot_settings' in globals():
-                try:
-                    apply_plot_settings(fig, global_plot_settings)
-                    if "dpi" in global_plot_settings:
-                        st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                    else:
-                        st.pyplot(fig)
-                except Exception as e:
-                    st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                    st.pyplot(fig)
-            else:
-                st.pyplot(fig)
+            st.pyplot(fig)
+            plt.close(fig)
             
             # İndirme Butonu
             buf = io.BytesIO()
@@ -2676,18 +2559,8 @@ elif secim == "⛰️ NEB Enerji Bariyeri (Energy Profile)":
         col_m2.metric("Ters Bariyer", f"{metrics['Ea_b']:.4f} eV")
         col_m3.metric("Reaksiyon Enerjisi (ΔE)", f"{metrics['Delta_E']:.4f} eV")
 
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=600, bbox_inches='tight')
@@ -3305,16 +3178,6 @@ elif secim == "🧲 Elastik Sabitler (IBRION=6)":
     # ==========================================
 # MODÜL 19: HSE06 BANT YAPISI OTOMASYONU
 # ==========================================
-elif secim == "⚙️ Mekanik Özellikler (VELAS)":
-    import sys
-    if r"C:\\Users\\cagatay\\Desktop\\DFT-pro\\modules" not in sys.path:
-        sys.path.append(r"C:\\Users\\cagatay\\Desktop\\DFT-pro\\modules")
-    try:
-        from mekanik_ozellikler import draw_mekanik_ozellikler
-        draw_mekanik_ozellikler()
-    except Exception as e:
-        st.error(f"Mekanik Özellikler modülü yüklenirken hata oluştu: {e}")
-
 elif secim == "💎 HSE06 Bant Yapısı (Otomasyon)":
     st.header("HSE06 Hibrit Fonksiyonel Bant Yapısı İş Akışı")
     st.markdown("Geometri optimizasyonundan çıkan yapınızı primitive hücreye çeviren, k-yolunu oluşturan ve HSE06 için ağırlıksız (zero-weight) KPOINTS dosyasını Vaspkit ile otonom olarak hazırlayan araçtır.")
@@ -5701,18 +5564,8 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                 spine.set_linewidth(2.0)
 
         plt.tight_layout(pad=3.0, w_pad=4.0)
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -5799,18 +5652,14 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
                             df['Temperature(K)'] = df.iloc[:, 1]
 
                     # 3. ENERJİ İÇİN SON SÜTUNU OKUMA
-                    # 3. ENERJİ İÇİN SÜTUNU OKUMA (E0_eV Öncelikli - 5. Sütun)
                     if 'Energy(eV)' not in df.columns:
-                        if 'E0_eV' in df.columns:
-                            df['Energy(eV)'] = df['E0_eV']
-                        elif 'E_Total_eV' in df.columns:
-                            df['Energy(eV)'] = df['E_Total_eV']
-                        elif 'E_Kinetic_eV' in df.columns:
+                        if 'E_Kinetic_eV' in df.columns: # Son sütununuzun başlığı
                             df['Energy(eV)'] = df['E_Kinetic_eV']
-                        elif len(df.columns) >= 5:
-                            df['Energy(eV)'] = df.iloc[:, 4]
-                        elif len(df.columns) > 0:
-                            df['Energy(eV)'] = df.iloc[:, -1]
+                        elif 'E_Total_eV' in df.columns: 
+                            df['Energy(eV)'] = df['E_Total_eV']
+                        elif len(df.columns) > 0: # Dosyada sütun varsa
+                            df['Energy(eV)'] = df.iloc[:, -1] # -1 her zaman EN SON sütunu alır
+
                     # Otonom Sınırları Güncelle
                     if 'Time(fs)' in df.columns:
                         global_t_max = max(global_t_max, df['Time(fs)'].max())
@@ -5971,18 +5820,8 @@ elif secim == "⏱️ AIMD Kararlılık (Sıcaklık/Enerji)- farklı format":
         fig.subplots_adjust(wspace=p_wspace)
 
         # Ekrana Basma
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu (Seçilen DPI değerine göre)
         buf = io.BytesIO()
@@ -6186,18 +6025,8 @@ elif secim == "🎶 Fonon Band Yapısı":
                     ax.legend([formatted_text], loc=text_position, fontsize=12, handlelength=0, handletextpad=0, fancybox=False, edgecolor='black').get_frame().set_linewidth(1.0)
 
                 plt.tight_layout()
-                if 'global_plot_settings' in globals():
-                    try:
-                        apply_plot_settings(fig, global_plot_settings)
-                        if "dpi" in global_plot_settings:
-                            st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                        else:
-                            st.pyplot(fig)
-                    except Exception as e:
-                        st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                        st.pyplot(fig)
-                else:
-                    st.pyplot(fig)
+                st.pyplot(fig)
+                plt.close(fig)
 
                 # --- 6. İNDİRME BUTONU ---
                 buf = io.BytesIO()
@@ -6416,18 +6245,8 @@ elif secim == "🎵 Titreşim Spektrumu(VDoS) Grafikli":
         plt.tight_layout()
 
         # Ekrana Basma
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         buf = io.BytesIO()
@@ -6624,18 +6443,8 @@ elif secim == "📍 Çoklu Sıcaklık RDF (Overlay)":
             tick.set_fontweight('bold')
         
         plt.tight_layout()
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # 📥 İNDİRME MOTORU
         st.markdown("### 📥 Makale İçin İndir")
@@ -6800,18 +6609,8 @@ elif secim == "📍 Çoklu Sıcaklık VDoS (Overlay)":
         plt.tight_layout()
         
         # Önce ekrana bas
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
 
         # 📥 İNDİRME MOTORU
         st.markdown("### 📥 Makale İçin İndir")
@@ -7013,18 +6812,8 @@ elif secim == "🎨 Master Grafik Birleştirici (Origin Klonu)":
                 plt.tight_layout()
 
                 # Grafiği Ekranda Göster
-                if 'global_plot_settings' in globals():
-                    try:
-                        apply_plot_settings(fig, global_plot_settings)
-                        if "dpi" in global_plot_settings:
-                            st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                        else:
-                            st.pyplot(fig)
-                    except Exception as e:
-                        st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                        st.pyplot(fig)
-                else:
-                    st.pyplot(fig)
+                st.pyplot(fig)
+                plt.close(fig)
 
                 # Çıktı Alma Bölümü
                 st.markdown("### 📥 Yüksek Çözünürlüklü Dışa Aktar")
@@ -7123,13 +6912,13 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                     st.session_state.main_db[edit_software][element_to_edit] = new_energy
                     save_to_database(st.session_state.main_db)
                     st.success("✅ Güncellendi!")
-                    pass  # st.rerun() removed to prevent infinite loop
+                    st.rerun()
             with btn_col2:
                 if st.button("Kaydı Sil"):
                     del st.session_state.main_db[edit_software][element_to_edit]
                     save_to_database(st.session_state.main_db)
                     st.warning("🗑️ Silindi!")
-                    pass  # st.rerun() removed to prevent infinite loop
+                    st.rerun()
 
     st.markdown("---")
 
@@ -7187,7 +6976,7 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                         z_val_p1 = n_cell / formula_atoms_p1
                         st.session_state.main_db[software_choice][elem] = e_tot / z_val_p1
                         save_to_database(st.session_state.main_db)
-                        pass  # st.rerun() removed to prevent infinite loop
+                        st.rerun()
 
         if path1_ready:
             st.markdown("#### 📊 Path 1 Sonuçları")
@@ -7253,7 +7042,7 @@ if secim == "🧪 Formasyon Enerjisi Hesaplama Modülü":
                                 z_val_p2 = n_cell_p2 / formula_atoms_p2
                                 st.session_state.main_db[software_choice][missing] = e_tot_p2 / z_val_p2
                                 save_to_database(st.session_state.main_db)
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                 
                 if path2_ready:
                     st.markdown("#### 📊 Path 2 Sonuçları")
@@ -7439,11 +7228,11 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                         if col_btn1.button("✨ Akıcılaştır", key=f"akici_tr_{alt_key}"):
                             with st.spinner("Düzenleniyor..."):
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], "Daha akıcı ve doğal hale getir")
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                         if col_btn2.button("🔬 Akademikleştir", key=f"akad_tr_{alt_key}"):
                             with st.spinner("Düzenleniyor..."):
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], "Daha bilimsel ve üst düzey akademik bir dil kullan")
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                         
                         tweak_opt = st.selectbox("Mod Değiştir...", ["Seçiniz...", "Otoriter & Ağır Yap", "Yalınlaştır", "Kısa & Öz Yap", "Sunum Dili"], key=f"sel_tr_{alt_key}")
                         if tweak_opt != "Seçiniz...":
@@ -7455,7 +7244,7 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                                     "Sunum Dili": "Bu metni sanki uluslararası bir kongrede sahnede sunum yapıyormuş gibi, ilham verici tonda yeniden yaz."
                                 }
                                 st.session_state.para_results[alt_key]["tr"] = tweak_text(api_key, st.session_state.para_results[alt_key]["tr"], instructions[tweak_opt])
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
 
                     # İNGİLİZCE SEKME
                     with tab_en:
@@ -7465,11 +7254,11 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                         if col_btn1_en.button("✨ Fluent", key=f"akici_en_{alt_key}"):
                             with st.spinner("Editing..."):
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], "Make it more fluent and natural")
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                         if col_btn2_en.button("🔬 Academic", key=f"akad_en_{alt_key}"):
                             with st.spinner("Editing..."):
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], "Use more scientific and high-level academic language")
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
                                 
                         tweak_opt_en = st.selectbox("Change Mode...", ["Select...", "Authoritative & Heavy", "Simplify", "Short & Concise", "Presentation Tone"], key=f"sel_en_{alt_key}")
                         if tweak_opt_en != "Select...":
@@ -7481,7 +7270,7 @@ Yanıtı doğrudan, tırnak işareti olmadan ve sadece metin olarak ver."""
                                     "Presentation Tone": "Rewrite this text in an inspiring, captivating tone as if giving a presentation on stage at an international conference."
                                 }
                                 st.session_state.para_results[alt_key]["en"] = tweak_text(api_key, st.session_state.para_results[alt_key]["en"], instructions_en[tweak_opt_en])
-                                pass  # st.rerun() removed to prevent infinite loop
+                                st.rerun()
         else:
             st.info("👈 Lütfen sol tarafa metninizi yapıştırın ve üret butonuna basın.")
                             # ==========================================
@@ -7677,18 +7466,8 @@ elif secim == "📈 Murnaghan EOS Fit (CASTEP)":
                     ax.legend(loc=leg_pos, frameon=False, fontsize=f_tick, prop={'weight':'bold'})
                     
                     plt.tight_layout()
-                    if 'global_plot_settings' in globals():
-                        try:
-                            apply_plot_settings(fig, global_plot_settings)
-                            if "dpi" in global_plot_settings:
-                                st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                            else:
-                                st.pyplot(fig)
-                        except Exception as e:
-                            st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                            st.pyplot(fig)
-                    else:
-                        st.pyplot(fig)
+                    st.pyplot(fig)
+                    plt.close(fig)
 
                     # --- İNDİRME MOTORU ---
                     buf = io.BytesIO()
@@ -8120,18 +7899,8 @@ elif secim == "⚡ Spin-Polarize Bant Yapısı":
                     ax.legend(loc='upper right', frameon=True, prop={'weight':'bold', 'size':f_label_size-2}).get_frame().set_linewidth(1.5)
 
                 plt.tight_layout()
-                if 'global_plot_settings' in globals():
-                    try:
-                        apply_plot_settings(fig, global_plot_settings)
-                        if "dpi" in global_plot_settings:
-                            st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                        else:
-                            st.pyplot(fig)
-                    except Exception as e:
-                        st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                        st.pyplot(fig)
-                else:
-                    st.pyplot(fig)
+                st.pyplot(fig)
+                plt.close(fig)
 
                 # 4. İNDİRME BÖLÜMÜ
                 st.markdown("### 📥 Makale Formatında İndir")
@@ -8308,18 +8077,8 @@ elif secim == "🧪 Stokiyometri ve Katkılama Analizi":
             ax.set_ylim(-0.15, 0.15)
             ax.axis('off')
             
-            if 'global_plot_settings' in globals():
-                try:
-                    apply_plot_settings(fig, global_plot_settings)
-                    if "dpi" in global_plot_settings:
-                        st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                    else:
-                        st.pyplot(fig)
-                except Exception as e:
-                    st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                    st.pyplot(fig)
-            else:
-                st.pyplot(fig)
+            st.pyplot(fig)
+            plt.close(fig)
             st.caption(f"**Ağırlıklı Efektif İyonik Yarıçaplar:** $r_A^{{eff}}$ = {r_A_eff:.3f} Å | $r_B^{{eff}}$ = {r_B_eff:.3f} Å")
 ####################Dergi Bulucu###############################
 #
@@ -8741,18 +8500,8 @@ elif secim == "📊 Yoğunluk Durumları (DOS/PDOS)":
                     transform=ax.transAxes, fontsize=p_font_label, fontweight='bold', va='top')
 
         plt.tight_layout()
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme İşlemi
         buf = io.BytesIO()
@@ -8952,18 +8701,8 @@ elif secim == "🔋 CASTEP Kinetik Analiz":
         ax.legend(loc="upper right", frameon=False, fontsize=font_size-2)
         
         # 1. Grafiği Streamlit Ekranına Standart Çiz
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
 
         # 2. Arka Planda Gerçek 600 DPI Bellek Tamponu Oluştur (YENİ)
         fn_buf = io.BytesIO()
@@ -9045,18 +8784,8 @@ elif secim == "📈 Convex Hull Analizi":
                     plot_fig = plotter.get_plot() 
                     
                     # Matplotlib figürünü Streamlit'e aktar
-                    if 'global_plot_settings' in globals():
-                        try:
-                            apply_plot_settings(plot_fig, global_plot_settings)
-                            if "dpi" in global_plot_settings:
-                                st.pyplot(plot_fig, dpi=global_plot_settings["dpi"])
-                            else:
-                                st.pyplot(plot_fig)
-                        except Exception as e:
-                            st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                            st.pyplot(plot_fig)
-                    else:
-                        st.pyplot(plot_fig)
+                    st.pyplot(plot_fig)
+                    plt.close(plot_fig)
                     
                     # Açık kalan plot objesini temizle (bellek sızıntısını önlemek için)
                     plt.close(plot_fig)
@@ -9285,18 +9014,8 @@ elif secim == "🔥 VASP Termodinamik Kıyaslama (F, S, Cv, E)":
         # Lejant sadece (a) paneline (F) eklenir
         ax_F.legend(loc='best', frameon=False, prop={'weight':'bold', 'size':f_leg})
 
-        if 'global_plot_settings' in globals():
-            try:
-                apply_plot_settings(fig, global_plot_settings)
-                if "dpi" in global_plot_settings:
-                    st.pyplot(fig, dpi=global_plot_settings["dpi"])
-                else:
-                    st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Grafik ayarları uygulanırken hata: {e}")
-                st.pyplot(fig)
-        else:
-            st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig)
         
         # İndirme Butonu
         c_dpi1, c_dpi2 = st.columns([1, 3])
