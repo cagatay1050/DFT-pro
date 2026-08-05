@@ -5410,7 +5410,7 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                     
                     if len(slopes) > 0:
                         # 6'ya bölüp cm^2/s birimine (10^-16) çeviriyoruz
-                        D_vals = (np.array(slopes) / 6.0) * 1e-16
+                        D_vals = (np.array(slopes) / 6.0) * 1e-1
                         mean_D = np.mean(D_vals)
                         std_D = np.std(D_vals, ddof=1) if len(D_vals) > 1 else 0.0
                         delta_lnD = std_D / mean_D if mean_D > 0 else 0.0
