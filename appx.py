@@ -5342,7 +5342,7 @@ elif secim == "🌌 Otonom Kütle İçi Difüzyon (Vacancy) CASTEP":
 # ==========================================
 # st.sidebar vs. menü ayarların varsa buraya entegre edersin.
 elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
-    st.header("A-Sınıfı Dergi Analizi: Yelpaze MSD ve Arrhenius")
+    st.header("A-Sınıfı Dergi Analizi: Yelpaze MSD ve Arrhenius (Hata Çubuklu)")
     st.markdown("Farklı sıcaklıklara ait verileri yükleyin. Düşük sıcaklıkları (titreşim gürültüsü) Arrhenius fitinden çıkarmak için yanlarındaki tiki kaldırın. Çıkarılan veriler grafikte şeffaf/içi boş olarak gösterilecektir.")
 
 # --- 1. KULLANICI ARAYÜZÜ (Dinamik Veri Girişi) ---
@@ -5353,16 +5353,15 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
     upload_data = []
     for i in range(int(num_temps)):
         st.markdown(f"**{i+1}. Veri Seti**")
-        # Dahil etme tik'ini yerleştirmek için kolonları 4'e çıkardık
         c1, c2, c3, c4 = st.columns([1.5, 1, 2, 2])
         with c1:
             t_val = st.number_input(f"Sıcaklık (K)", value=300.0 + i*150.0, key=f"t_{i}", step=50.0)
         with c2:
-            # FİT'E DAHİL ETME KONTROLÜ
             include_fit = st.checkbox("Fit'e Dahil Et", value=True, key=f"inc_{i}", help="Arrhenius (Ea) hesabına katılsın mı?")
         with c3:
             msd_file = st.file_uploader(f"MSD.dat ({t_val} K)", type=["dat", "txt", "csv"], key=f"msd_{i}")
         with c4:
+            # DIFFUSION.dat'a artık matematiksel olarak ihtiyacımız yok ama akışı bozmamak için yükleme butonu kalabilir
             diff_file = st.file_uploader(f"DIFFUSION.dat ({t_val} K)", type=["dat", "txt", "csv"], key=f"diff_{i}")
         
         if msd_file and diff_file:
@@ -5374,7 +5373,6 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
     if len(upload_data) == int(num_temps):
         if st.button("Verileri İşle ve Grafiği Hazırla", type="primary"):
             try:
-                # Akıllı Dosya Okuyucu
                 def smart_load(uploaded_file):
                     uploaded_file.seek(0)
                     df = pd.read_csv(uploaded_file, sep=r'\s+', comment='#', header=None, engine='python')
@@ -5383,6 +5381,7 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                 processed_data = []
                 all_temperatures = []
                 all_diffusion_coeffs = []
+                all_delta_lnD = [] # YENİ: Hata çubuğu değerlerini tutacak liste
                 all_includes = []
                 max_msd_list = []
                 
@@ -5391,24 +5390,55 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                 
                 for t_val, m_file, d_file, inc_fit in upload_data:
                     m_df = smart_load(m_file)
-                    d_df = smart_load(d_file)
                     
-                    final_D = d_df[4].iloc[-1]
+                    # --- YENİ EKLENEN BLOK ANALİZİ (İSTATİSTİK VE HATA PAYI) ---
+                    total_rows = len(m_df)
+                    num_blocks = 5
+                    block_size = total_rows // num_blocks
+                    slopes = []
+                    
+                    for b in range(num_blocks):
+                        start_idx = b * block_size
+                        end_idx = (b + 1) * block_size if b < (num_blocks - 1) else total_rows
+                        block_data = m_df.iloc[start_idx:end_idx]
+                        
+                        # m_df[0] = Zaman, m_df[4] = Toplam MSD
+                        slope, _, _, _, _ = stats.linregress(block_data[0], block_data[4])
+                        
+                        if slope > 0: # Negatif fiziksel olmayan eğimleri eliyoruz
+                            slopes.append(slope)
+                    
+                    if len(slopes) > 0:
+                        # 6'ya bölüp cm^2/s birimine (10^-16) çeviriyoruz
+                        D_vals = (np.array(slopes) / 6.0) * 1e-16
+                        mean_D = np.mean(D_vals)
+                        std_D = np.std(D_vals, ddof=1) if len(D_vals) > 1 else 0.0
+                        delta_lnD = std_D / mean_D if mean_D > 0 else 0.0
+                    else:
+                        mean_D = np.nan
+                        delta_lnD = 0.0
+                        inc_fit = False # Geçerli veri yoksa otomatik olarak fit'ten çıkar
+                        st.warning(f"{t_val} K verisinde pozitif bir difüzyon eğilimi bulunamadı. Fit'ten dışlandı.")
+                    # -------------------------------------------------------------
+
                     local_max_msd = m_df[4].max()
                     
-                    all_temperatures.append(t_val)
-                    all_diffusion_coeffs.append(final_D)
-                    all_includes.append(inc_fit)
-                    max_msd_list.append(local_max_msd)
-                    
-                    processed_data.append((t_val, m_df, inc_fit))
-                    
-                    if m_df[0].iloc[-1] > max_time: max_time = float(m_df[0].iloc[-1])
-                    if local_max_msd > max_msd: max_msd = float(local_max_msd)
+                    if not np.isnan(mean_D):
+                        all_temperatures.append(t_val)
+                        all_diffusion_coeffs.append(mean_D)
+                        all_delta_lnD.append(delta_lnD)
+                        all_includes.append(inc_fit)
+                        max_msd_list.append(local_max_msd)
+                        
+                        processed_data.append((t_val, m_df, inc_fit))
+                        
+                        if m_df[0].iloc[-1] > max_time: max_time = float(m_df[0].iloc[-1])
+                        if local_max_msd > max_msd: max_msd = float(local_max_msd)
 
                 # --- SADECE TİKLİ OLANLARLA ARRHENIUS HESABI ---
                 T_arr = np.array(all_temperatures)
                 D_arr = np.array(all_diffusion_coeffs)
+                Err_arr = np.array(all_delta_lnD)
                 Inc_arr = np.array(all_includes, dtype=bool)
                 
                 fit_T = T_arr[Inc_arr]
@@ -5417,11 +5447,11 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                 kB = 8.617333262e-5  
                 
                 if len(fit_T) >= 2:
-                    slope, intercept, r_value, _, _ = stats.linregress(1/fit_T, np.log(fit_D))
-                    Ea_eV = -slope * kB            
+                    slope, intercept, r_value, _, _ = stats.linregress(1000/fit_T, np.log(fit_D))
+                    Ea_eV = -slope * kB * 1000 # 1000/T kullandığımız için formülde 1000 ile çarpmalıyız            
                     r_squared = r_value**2
                 else:
-                    st.error("Fit işlemi için en az 2 sıcaklık seçmelisiniz!")
+                    st.error("Fit işlemi için en az 2 geçerli sıcaklık seçmelisiniz!")
                     st.stop()
                 
                 # Hafızaya Atma
@@ -5430,6 +5460,7 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                 
                 st.session_state.all_T = T_arr
                 st.session_state.all_D = D_arr
+                st.session_state.all_Err = Err_arr
                 st.session_state.all_Inc = Inc_arr
                 
                 st.session_state.master_slope = slope
@@ -5440,16 +5471,15 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                 st.session_state.master_max_msd = max_msd
                 
                 # Sayfaya Tablo Olarak Değerleri Basma
-                st.success(f"✅ Hesaplama Başarılı! Sadece seçili ({len(fit_T)} adet) veri fite dahil edildi.")
-                st.markdown("### 📊 Okunan Ham Veriler")
+                st.success(f"✅ Hesaplama Başarılı! Blok analizi yapıldı. Sadece seçili ({len(fit_T)} adet) veri fite dahil edildi.")
                 
                 res_df = pd.DataFrame({
                     "Sıcaklık (K)": T_arr,
-                    "Difüzyon Katsayısı (D)": D_arr,
-                    "Maksimum MSD": max_msd_list,
+                    "Difüzyon Kat. (D) [cm²/s]": D_arr,
+                    "Hata Payı (ΔlnD)": Err_arr,
                     "Fit'e Dahil?": ["Evet" if i else "Hayır" for i in Inc_arr]
                 })
-                st.table(res_df.style.format({"Difüzyon Katsayısı (D)": "{:.4e}", "Maksimum MSD": "{:.2f}"}))
+                st.table(res_df.style.format({"Difüzyon Kat. (D) [cm²/s]": "{:.4e}", "Hata Payı (ΔlnD)": "± {:.3f}"}))
 
             except Exception as e:
                 st.error(f"Hata oluştu: {e}")
@@ -5498,7 +5528,6 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
         for idx, (t_val, m_df, inc_fit) in enumerate(st.session_state.master_data):
             time_data = m_df[0]
             total_msd = m_df[4]
-            # Eğer fit'e dahil değilse çizgiyi biraz daha soluk yapabiliriz
             alpha_val = 1.0 if inc_fit else 0.4
             ls_val = '-' if inc_fit else '--'
             ax1.plot(time_data, total_msd, color=colors[idx], linewidth=3.0, alpha=alpha_val, linestyle=ls_val, label=f"{t_val} K")
@@ -5517,26 +5546,32 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
         
         T_all = st.session_state.all_T
         D_all = st.session_state.all_D
+        Err_all = st.session_state.all_Err
         Inc_all = st.session_state.all_Inc
         
         # Tikli (Dahil Edilen) ve Tiksiz (Dışlanan) verileri ayırma
         inv_T_inc = 1000 / T_all[Inc_all]
         ln_D_inc = np.log(D_all[Inc_all])
+        err_inc = Err_all[Inc_all]
         
         inv_T_exc = 1000 / T_all[~Inc_all]
         ln_D_exc = np.log(D_all[~Inc_all])
+        err_exc = Err_all[~Inc_all]
         
-        # Tikli noktaları İÇİ DOLU KIRMIZI çiz
+        # YENİ: Hata çubuklarıyla (Errorbar) çizim yapıyoruz (Scatter yerine)
         if len(inv_T_inc) > 0:
-            ax2.scatter(inv_T_inc, ln_D_inc, color='red', s=160, edgecolor='black', zorder=5, label=f'${mat_name}$ Data (Fitted)')
+            ax2.errorbar(inv_T_inc, ln_D_inc, yerr=err_inc, fmt='o', color='red', 
+                         markersize=12, markeredgecolor='black', ecolor='black', capsize=5, capthick=2, 
+                         elinewidth=2, zorder=5, label=f'${mat_name}$ Data (Fitted)')
         
-        # Tiksiz (Dışlanan) noktaları İÇİ BOŞ GRİ çiz (Bilimsel dürüstlük)
         if len(inv_T_exc) > 0:
-            ax2.scatter(inv_T_exc, ln_D_exc, facecolors='none', edgecolors='grey', s=160, linewidth=2.5, zorder=4, label='Excluded Data')
+            ax2.errorbar(inv_T_exc, ln_D_exc, yerr=err_exc, fmt='o', markerfacecolor='none', 
+                         markeredgecolor='grey', ecolor='grey', markersize=12, markeredgewidth=2.5, 
+                         capsize=5, capthick=2, elinewidth=2, zorder=4, label='Excluded Data')
         
-        # Fit Çizgisi (Sadece Tikli verilere göre hesaplanan doğru)
+        # Fit Çizgisi
         x_fit_plot = np.linspace(p_arr_xmin, p_arr_xmax, 100)
-        y_fit_plot = st.session_state.master_intercept + st.session_state.master_slope * (x_fit_plot / 1000)
+        y_fit_plot = st.session_state.master_intercept + st.session_state.master_slope * x_fit_plot
         ax2.plot(x_fit_plot, y_fit_plot, color='blue', lw=2.5, ls='--', label='Linear Fit')
 
         ax2.set_xlabel(r'1000 / T (K$^{-1}$)', fontweight='bold', fontsize=font_labels, labelpad=10)
@@ -5553,6 +5588,7 @@ elif secim == "🌟 Kapsamlı A-Sınıfı (Yelpaze & Arrhenius)":
                  bbox=dict(facecolor='white', alpha=0.9, edgecolor='black', boxstyle='round,pad=0.6'))
 
         # --- ORTAK ORIGIN STYLE EKSEN AYARLARI ---
+        from matplotlib.ticker import AutoMinorLocator, MultipleLocator
         for ax in axes:
             ax.xaxis.set_minor_locator(AutoMinorLocator(2))
             ax.yaxis.set_minor_locator(AutoMinorLocator(2))
